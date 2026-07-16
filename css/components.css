@@ -970,3 +970,20 @@ html[lang="zh-CN"] .button,
 html[lang="zh-CN"] .destination-card {
   letter-spacing: 0;
 }
+.try-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--target-min);
+  padding-inline: var(--space-4);
+  border: 2px solid var(--action-primary);
+  border-radius: var(--radius-control);
+  background: var(--action-primary);
+  color: var(--action-primary-ink);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.try-button:hover {
+  background: var(--action-primary-hover);
+}

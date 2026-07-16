@@ -1,5 +1,7 @@
 # Mathzlet
 
+Play online: https://babullee.github.io/Mathzlet-game/
+
 Mathzlet is a cooperative mathematical adventure for children aged 5–6 and their parents. This repository contains a responsive bilingual website and playable card-game prototype built for static hosting on GitHub Pages.
 
 The experience encourages children and adults to notice patterns, combine quantities, compare ideas, and find more than one solution together. It uses positive, untimed feedback rather than scores, penalties, or competitive rankings.
