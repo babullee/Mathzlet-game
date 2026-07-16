@@ -1,0 +1,294 @@
+@media (min-width: 30rem) {
+  .screen {
+    padding-inline: var(--space-5);
+  }
+
+  .hero-actions {
+    grid-template-columns: 1fr 1fr;
+    width: min(100%, 34rem);
+  }
+
+  .hero-actions .primary-button {
+    grid-column: 1 / -1;
+  }
+
+  .card-grid {
+    grid-template-columns: repeat(auto-fit, minmax(7.25rem, 1fr));
+  }
+
+  .hand-panel .card-grid {
+    grid-auto-columns: minmax(7.25rem, 8.5rem);
+  }
+}
+
+@media (min-width: 37.5rem) {
+  .topbar {
+    padding-inline: var(--space-5);
+  }
+
+  .screen {
+    padding-block-start: var(--space-6);
+  }
+
+  .map-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: var(--space-6);
+  }
+
+  .map-grid::before {
+    inset: 50% 4rem auto;
+    width: auto;
+    height: 3px;
+    border-block-start: 4px dashed rgb(138 87 0 / 38%);
+    border-inline-start: 0;
+  }
+
+  .destination-card:nth-child(even),
+  .destination-card:nth-child(even):hover:not(:disabled) {
+    transform: none;
+  }
+
+  .destination-card:nth-child(3n) {
+    grid-column: 1 / -1;
+    width: min(100%, 32rem);
+    margin-inline: auto;
+  }
+
+  .action-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .action-row .primary-button {
+    grid-column: auto;
+    order: initial;
+  }
+
+  .tutorial-overlay,
+  .modal-backdrop {
+    align-items: center;
+    padding: var(--space-5);
+  }
+
+  .tutorial-card,
+  .settings-panel,
+  .modal {
+    border-radius: var(--radius-panel);
+  }
+
+  .topbar .icon-button > span:last-child {
+    display: inline;
+  }
+}
+
+@media (min-width: 48rem) {
+  .hero {
+    grid-template-columns: minmax(18rem, .9fr) minmax(22rem, 1.1fr);
+    gap: var(--space-7);
+  }
+
+  .hero-content {
+    justify-items: start;
+    margin-inline: 0;
+    text-align: start;
+  }
+
+  .hero-art {
+    min-height: clamp(24rem, 58vh, 36rem);
+  }
+
+  .section-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .game-layout {
+    grid-template-columns: minmax(13.5rem, .75fr) minmax(0, 1.75fr);
+    align-items: start;
+  }
+
+  .mission-panel {
+    position: sticky;
+    inset-block-start: calc(var(--topbar-height) + var(--space-4));
+    grid-column: 1;
+  }
+
+  .play-area,
+  .hand-panel,
+  .solution-zone,
+  .feedback,
+  .action-row {
+    grid-column: 2;
+  }
+
+  .strategy-shelf {
+    grid-column: 1;
+  }
+
+  .tools-panel {
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .tools-panel > h2 {
+    grid-column: 1 / -1;
+  }
+
+  .tools-panel > .action-row,
+  .tools-panel > .strategy-shelf,
+  .tools-panel > .feedback,
+  .tools-panel > .success-actions {
+    grid-column: auto;
+  }
+
+  .hand-panel .card-grid {
+    grid-auto-flow: initial;
+    grid-auto-columns: initial;
+    grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+    overflow: visible;
+    padding-inline: 0;
+  }
+
+  .solution-zone {
+    min-height: 14rem;
+  }
+
+  .nav-dock {
+    inset-inline: auto var(--space-5);
+    max-width: 31rem;
+    margin-inline: 0;
+  }
+}
+
+@media (min-width: 64rem) {
+  .screen {
+    padding-inline: var(--space-6);
+    padding-block-end: var(--space-7);
+  }
+
+  .game-layout {
+    grid-template-columns: minmax(13.5rem, .8fr) minmax(28rem, 1.7fr) minmax(12.5rem, .7fr);
+    gap: var(--space-5);
+  }
+
+  .mission-panel {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  .play-area,
+  .hand-panel,
+  .solution-zone,
+  .feedback,
+  .action-row {
+    grid-column: 2;
+  }
+
+  .strategy-shelf,
+  .game-tools,
+  .parent-prompt,
+  .tools-panel {
+    grid-column: 3;
+    align-self: start;
+  }
+
+  .tools-panel {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .tools-panel > h2,
+  .tools-panel > .action-row,
+  .tools-panel > .strategy-shelf,
+  .tools-panel > .feedback,
+  .tools-panel > .success-actions {
+    grid-column: 1;
+  }
+
+  .tools-panel .action-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .strategy-shelf .card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .nav-dock {
+    position: static;
+    max-width: none;
+    min-height: 0;
+    margin-inline: auto;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
+@media (min-width: 75rem) {
+  .map-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    min-height: 29rem;
+    align-items: center;
+  }
+
+  .destination-card:nth-child(3n) {
+    grid-column: auto;
+    width: 100%;
+  }
+
+  .destination-card:nth-child(2) {
+    transform: translateY(4.5rem);
+  }
+
+  .destination-card:nth-child(2):hover:not(:disabled) {
+    transform: translateY(calc(4.5rem - 3px));
+  }
+}
+
+@media (max-height: 40.625rem) and (orientation: landscape) {
+  .hero {
+    min-height: auto;
+    padding-block: var(--space-3);
+  }
+
+  .hero-art {
+    min-height: 15rem;
+  }
+
+  .scout {
+    width: 7rem;
+  }
+
+  .mission-target {
+    width: 6.25rem;
+  }
+}
+
+@media (forced-colors: active) {
+  .primary-button,
+  .secondary-button,
+  .button,
+  .icon-button,
+  .game-card,
+  .destination-card,
+  .mission-panel,
+  .hand-panel,
+  .solution-zone,
+  .strategy-shelf,
+  .feedback,
+  .badge {
+    border: 2px solid ButtonText;
+    box-shadow: none;
+    forced-color-adjust: auto;
+  }
+
+  .game-card[aria-selected="true"],
+  .game-card.is-selected,
+  .selected-card {
+    outline: 4px solid Highlight;
+  }
+
+  :focus-visible {
+    outline: 4px solid Highlight;
+  }
+}

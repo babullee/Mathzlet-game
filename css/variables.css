@@ -1,0 +1,96 @@
+:root {
+  color-scheme: light;
+
+  --ink-strong: #17324d;
+  --ink-body: #294961;
+  --ink-muted: #52687d;
+  --paper: #fffaf0;
+  --paper-raised: #ffffff;
+  --paper-warm: #fff3d3;
+  --map-sand: #f7e7bb;
+  --line: #b8c4cc;
+  --line-strong: #6f8393;
+  --scrim: rgb(14 35 53 / 64%);
+  --shadow-color: rgb(23 50 77 / 16%);
+
+  --action-primary: #1e5fa8;
+  --action-primary-hover: #174c87;
+  --action-primary-pressed: #123d6d;
+  --action-primary-ink: #ffffff;
+  --action-secondary: #e8f1f7;
+  --action-secondary-hover: #d7e8f2;
+  --focus: #0a67c7;
+  --success: #176b4d;
+  --success-soft: #dff4e8;
+  --gentle-clue: #a8442f;
+  --gentle-clue-soft: #fff0e8;
+
+  --number: #1e67b1;
+  --number-soft: #e5f1ff;
+  --puzzle: #6846a5;
+  --puzzle-soft: #eee8fb;
+  --mission: #8a5700;
+  --mission-soft: #ffedb5;
+  --strategy: #176b63;
+  --strategy-soft: #dff4f0;
+  --reward: #a3412f;
+  --reward-soft: #ffe4dc;
+
+  --forest: #6e9b62;
+  --forest-dark: #315b36;
+  --cave: #88709e;
+  --cave-dark: #533d68;
+  --river: #62a9c7;
+  --river-dark: #275f78;
+  --mountain: #a58267;
+  --camp: #d7923e;
+
+  --font-display: ui-rounded, "Arial Rounded MT Bold", "Trebuchet MS", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  --font-body: "Trebuchet MS", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  --text-xs: 0.875rem;
+  --text-sm: 1rem;
+  --text-md: 1.125rem;
+  --text-lg: 1.375rem;
+  --text-xl: clamp(1.75rem, 4vw, 2.5rem);
+  --text-hero: clamp(2.5rem, 10vw, 5rem);
+  --line-compact: 1.15;
+  --line-body: 1.45;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+
+  --radius-small: 0.625rem;
+  --radius-control: 0.875rem;
+  --radius-card: 1.25rem;
+  --radius-panel: 1.75rem;
+  --stroke: 2px;
+  --target-min: 3rem;
+  --content-max: 73.75rem;
+  --reading-max: 43rem;
+  --topbar-height: 4.5rem;
+  --nav-height: 4.75rem;
+
+  --shadow-card: 0 5px 0 var(--shadow-color), 0 10px 24px rgb(23 50 77 / 10%);
+  --shadow-lift: 0 8px 0 var(--shadow-color), 0 16px 30px rgb(23 50 77 / 14%);
+  --shadow-panel: 0 12px 36px rgb(23 50 77 / 13%);
+
+  --duration-fast: 120ms;
+  --duration-base: 220ms;
+  --duration-slow: 420ms;
+  --ease-out: cubic-bezier(.2, .8, .2, 1);
+  --ease-place: cubic-bezier(.2, .9, .3, 1.15);
+}
+
+[data-animation="low"],
+[data-motion="reduced"] {
+  --duration-fast: 1ms;
+  --duration-base: 1ms;
+  --duration-slow: 1ms;
+}
+

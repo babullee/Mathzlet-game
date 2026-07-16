@@ -1,0 +1,105 @@
+@keyframes card-float {
+  0%, 100% { transform: translateY(0) rotate(var(--float-rotate, -2deg)); }
+  45% { transform: translateY(-.55rem) rotate(var(--float-rotate, -2deg)); }
+}
+
+@keyframes scout-breathe {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-.3rem) rotate(1deg); }
+}
+
+@keyframes compass-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(10 103 199 / 0%); }
+  45% { box-shadow: 0 0 0 .75rem rgb(10 103 199 / 16%); }
+}
+
+@keyframes gentle-nudge {
+  0%, 100% { transform: translateX(0); }
+  35% { transform: translateX(-.25rem); }
+  70% { transform: translateX(.25rem); }
+}
+
+@keyframes settle-card {
+  0% { opacity: .35; transform: translateY(-1rem) scale(1.04); }
+  70% { opacity: 1; transform: translateY(.15rem) scale(.99); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes reward-reveal {
+  0% { opacity: 0; transform: scale(.72) rotate(-5deg); }
+  70% { opacity: 1; transform: scale(1.04) rotate(1deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+@keyframes screen-enter {
+  from { opacity: 0; transform: translateY(1rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.screen:not([hidden]) {
+  animation: screen-enter var(--duration-base) var(--ease-out) both;
+}
+
+.hero-art .floating-card,
+.hero-art > .game-card {
+  --float-rotate: -2deg;
+  animation: card-float 5.5s var(--ease-out) infinite;
+}
+
+.hero-art .floating-card:nth-of-type(2),
+.hero-art > .game-card:nth-of-type(2) {
+  --float-rotate: 3deg;
+  animation-delay: -2s;
+  animation-duration: 6.5s;
+}
+
+.hero-art .floating-card:nth-of-type(3),
+.hero-art > .game-card:nth-of-type(3) {
+  --float-rotate: 1deg;
+  animation-delay: -4s;
+  animation-duration: 7s;
+}
+
+.scout {
+  animation: scout-breathe 4.8s ease-in-out infinite;
+}
+
+.destination-card[data-state="current"] .destination-icon,
+.destination-card[aria-current="true"] .destination-icon {
+  animation: compass-pulse 3.2s ease-in-out infinite;
+}
+
+.solution-zone.is-nudging,
+.feedback.is-clue.is-new {
+  animation: gentle-nudge var(--duration-base) var(--ease-out) 1;
+}
+
+.solution-zone .game-card.is-new {
+  animation: settle-card var(--duration-base) var(--ease-place) both;
+}
+
+.reward-card.is-revealed,
+.badge.is-revealed {
+  animation: reward-reveal var(--duration-slow) var(--ease-place) both;
+}
+
+[data-motion="reduced"] *,
+[data-motion="reduced"] *::before,
+[data-motion="reduced"] *::after {
+  scroll-behavior: auto !important;
+  animation-duration: .01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: .01ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+

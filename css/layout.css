@@ -1,0 +1,258 @@
+.app-shell {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: clip;
+}
+
+.app-shell::before {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background-image:
+    radial-gradient(circle, rgb(30 95 168 / 9%) 0 2px, transparent 2.5px),
+    radial-gradient(circle, rgb(138 87 0 / 8%) 0 1.5px, transparent 2px);
+  background-position: 0 0, 1.75rem 1.5rem;
+  background-size: 4.5rem 4.5rem, 5rem 5rem;
+  content: "";
+  pointer-events: none;
+}
+
+.topbar {
+  position: relative;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: var(--topbar-height);
+  padding: var(--space-3) max(var(--space-3), env(safe-area-inset-right)) var(--space-3) max(var(--space-3), env(safe-area-inset-left));
+  border-block-end: 2px solid rgb(23 50 77 / 10%);
+  background: rgb(255 250 240 / 94%);
+  backdrop-filter: blur(10px);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  color: var(--ink-strong);
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 5vw, 1.7rem);
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: none;
+}
+
+button.brand {
+  min-height: var(--target-min);
+  padding: var(--space-1);
+  border: 0;
+  background: transparent;
+  text-align: start;
+}
+
+.brand svg,
+.brand img {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.brand .brand-logo {
+  width: clamp(8.25rem, 34vw, 11.125rem);
+  height: auto;
+}
+
+.brand > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: none;
+}
+
+.screen {
+  display: grid;
+  align-content: start;
+  width: 100%;
+  max-width: var(--content-max);
+  min-height: calc(100vh - var(--topbar-height));
+  min-height: calc(100dvh - var(--topbar-height));
+  margin-inline: auto;
+  padding: var(--space-5) var(--space-3) calc(var(--nav-height) + var(--space-6) + env(safe-area-inset-bottom));
+}
+
+.screen[aria-hidden="true"] {
+  display: none;
+}
+
+.screen-header {
+  display: grid;
+  gap: var(--space-2);
+  margin-block-end: var(--space-5);
+}
+
+.screen-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-block-end: var(--space-5);
+}
+
+.screen-heading h1,
+.screen-heading p {
+  margin: 0;
+}
+
+.screen-header > * {
+  margin-block-end: 0;
+}
+
+.hero {
+  position: relative;
+  display: grid;
+  align-items: center;
+  gap: var(--space-6);
+  min-height: calc(100dvh - var(--topbar-height) - var(--space-7));
+  padding-block: var(--space-4) var(--space-7);
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  gap: var(--space-4);
+  max-width: 38rem;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.hero-content h1 {
+  margin: 0;
+  font-size: var(--text-hero);
+  letter-spacing: -.035em;
+}
+
+.hero-content p {
+  margin: 0;
+  color: var(--ink-body);
+  font-size: clamp(1.15rem, 4vw, 1.55rem);
+  font-weight: 700;
+}
+
+.hero-actions {
+  display: grid;
+  width: min(100%, 22rem);
+  gap: var(--space-3);
+}
+
+.hero-art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 16rem;
+  border: 2px solid rgb(138 87 0 / 18%);
+  border-radius: clamp(1.5rem, 7vw, 3.5rem);
+  overflow: hidden;
+  background:
+    linear-gradient(rgb(255 250 240 / 3%), rgb(255 250 240 / 3%)),
+    url("../assets/illustrations/adventure-map.webp") center / cover no-repeat,
+    linear-gradient(145deg, #fff1c8, var(--map-sand));
+  box-shadow: var(--shadow-panel);
+}
+
+.hero-art::after {
+  position: absolute;
+  inset: 18% 8% 12%;
+  content: none;
+}
+
+.section-grid {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.map-stage {
+  position: relative;
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.map-stage > .progress-path {
+  position: relative;
+  z-index: 3;
+  width: min(100%, 28rem);
+  margin-inline: auto;
+}
+
+.map-stage > .scout {
+  position: absolute;
+  inset-inline-end: clamp(-2.5rem, -2vw, -.5rem);
+  inset-block-end: -2rem;
+  width: clamp(5rem, 19vw, 8rem);
+  pointer-events: none;
+}
+
+.nav-dock {
+  position: fixed;
+  inset-inline: var(--space-3);
+  inset-block-end: max(var(--space-3), env(safe-area-inset-bottom));
+  z-index: 40;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  align-items: stretch;
+  max-width: 35rem;
+  min-height: var(--nav-height);
+  margin-inline: auto;
+  padding: var(--space-2);
+  border: 2px solid rgb(23 50 77 / 18%);
+  border-radius: 1.35rem;
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 8px 32px rgb(23 50 77 / 22%);
+}
+
+.nav-dock button,
+.nav-dock a {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: .15rem;
+  min-width: var(--target-min);
+  min-height: var(--target-min);
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--ink-body);
+  font-size: .75rem;
+  font-weight: 800;
+  line-height: 1.05;
+  text-align: center;
+  text-decoration: none;
+}
+
+.nav-dock button:hover,
+.nav-dock a:hover,
+.nav-dock [aria-current="page"] {
+  background: var(--action-secondary);
+  color: var(--action-primary-hover);
+}
+
+.nav-dock svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}

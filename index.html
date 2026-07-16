@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#fffaf0">
+    <meta name="description" content="">
+    <title>Mathzlet</title>
+    <link rel="preload" href="./assets/illustrations/adventure-map.webp" as="image" type="image/webp">
+    <link rel="stylesheet" href="./css/variables.css?v=20260716-release">
+    <link rel="stylesheet" href="./css/base.css?v=20260716-release">
+    <link rel="stylesheet" href="./css/layout.css?v=20260716-release">
+    <link rel="stylesheet" href="./css/components.css?v=20260716-release">
+    <link rel="stylesheet" href="./css/cards.css?v=20260716-release">
+    <link rel="stylesheet" href="./css/game.css?v=20260716-release">
+    <link rel="stylesheet" href="./css/animations.css?v=20260716-release">
+    <link rel="stylesheet" href="./css/responsive.css?v=20260716-release">
+  </head>
+  <body>
+    <a class="skip-link" href="#mainContent" data-i18n="skipToContent"></a>
+    <div class="app-shell" id="app">
+      <header class="topbar">
+        <button class="brand" type="button" data-action="home" data-i18n-aria-label="goHome">
+          <img class="brand-logo" src="./assets/icons/mathzlet-logo.svg" alt="" width="178" height="48">
+        </button>
+        <div class="topbar-actions">
+          <button class="language-button" type="button" data-action="toggle-language" data-i18n-aria-label="changeLanguage">
+            <span aria-hidden="true">文/A</span>
+            <span id="languageButtonLabel">EN</span>
+          </button>
+          <button class="icon-button" type="button" data-action="open-settings" data-i18n-aria-label="settings">
+            <span aria-hidden="true">⚙</span>
+            <span data-i18n="settings"></span>
+          </button>
+        </div>
+      </header>
+
+      <main id="mainContent" tabindex="-1">
+        <section class="screen is-active" id="screen-home" data-screen="home" aria-labelledby="homeTitle">
+          <div class="hero">
+            <div class="hero-art" role="img" data-i18n-aria-label="heroArtLabel"></div>
+            <div class="hero-content">
+              <span class="eyebrow" data-i18n="cooperativeGame"></span>
+              <h1 id="homeTitle" data-i18n="appTitle"></h1>
+              <p class="tagline" data-i18n="tagline"></p>
+              <div class="hero-actions">
+                <button class="primary-button" type="button" data-action="start">
+                  <span aria-hidden="true">🧭</span>
+                  <span data-i18n="startAdventure"></span>
+                </button>
+                <button class="secondary-button" type="button" data-action="open-tutorial">
+                  <span aria-hidden="true">▶</span>
+                  <span data-i18n="howToPlay"></span>
+                </button>
+              </div>
+              <div class="feature-chips" aria-label="">
+                <span><b aria-hidden="true">∞</b> <span data-i18n="manyWays"></span></span>
+                <span><b aria-hidden="true">🤝</b> <span data-i18n="playTogether"></span></span>
+                <span><b aria-hidden="true">◉</b> <span data-i18n="agesFiveSix"></span></span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen" id="screen-map" data-screen="map" aria-labelledby="mapTitle" hidden>
+          <div class="screen-heading">
+            <div>
+              <span class="eyebrow" data-i18n="chooseTogether"></span>
+              <h1 id="mapTitle" data-i18n="adventureMap"></h1>
+            </div>
+            <div class="badge progress-summary"><span aria-hidden="true">★</span> <span id="mapProgress"></span></div>
+          </div>
+          <div class="map-stage">
+            <div class="progress-path" aria-hidden="true"></div>
+            <div class="map-grid" id="mapGrid"></div>
+            <div class="scout" aria-hidden="true"><span>✦</span><i></i></div>
+          </div>
+          <button class="secondary-button finish-map-action" type="button" data-action="finish-session">
+            <span aria-hidden="true">🏕</span><span data-i18n="finishSession"></span>
+          </button>
+        </section>
+
+        <section class="screen" id="screen-game" data-screen="game" aria-labelledby="gameTitle" hidden>
+          <div class="screen-heading game-heading">
+            <div>
+              <span class="eyebrow" id="locationName"></span>
+              <h1 id="gameTitle" data-i18n="mission"></h1>
+            </div>
+            <div class="badge" id="missionProgress"></div>
+          </div>
+          <div class="game-layout">
+            <article class="mission-panel">
+              <span class="card-category"><span aria-hidden="true">🧭</span> <span data-i18n="missionCard"></span></span>
+              <h2 id="missionTitle"></h2>
+              <p id="missionInstruction"></p>
+              <div class="target-display" id="missionTarget" aria-live="polite"></div>
+              <button class="secondary-button map-return" type="button" data-action="map">
+                <span aria-hidden="true">↩</span><span data-i18n="backToMap"></span>
+              </button>
+            </article>
+
+            <section class="hand-panel" aria-labelledby="solutionHeading">
+              <h2 id="solutionHeading" data-i18n="ourSolution"></h2>
+              <div class="solution-zone" id="solutionZone" role="group" aria-labelledby="solutionHeading" aria-describedby="solutionHelp">
+                <button class="solution-place-button" id="solutionPlaceButton" type="button" data-i18n-aria-label="solutionZoneLabel">
+                  <span class="solution-placeholder" id="solutionPlaceholder">
+                    <span aria-hidden="true">＋</span>
+                    <span data-i18n="placeCardsHere"></span>
+                  </span>
+                </button>
+                <div class="selected-cards" id="selectedCards"></div>
+                <output class="solution-total" id="solutionTotal"></output>
+              </div>
+              <p class="microcopy" id="solutionHelp" data-i18n="tapThenPlace"></p>
+              <div class="discovered-solutions" id="discoveredSolutions"></div>
+
+              <h2 data-i18n="ourCards"></h2>
+              <div class="card-grid" id="cardHand" role="group" data-i18n-aria-label="availableCardsLabel"></div>
+
+              <button class="primary-button confirm-button" id="confirmButton" type="button" data-action="confirm">
+                <span aria-hidden="true">✓</span><span data-i18n="confirm"></span>
+              </button>
+            </section>
+
+            <aside class="tools-panel">
+              <h2 data-i18n="teamTools"></h2>
+              <div class="action-row">
+                <button class="tool-button" type="button" data-action="hint"><span aria-hidden="true">✦</span><span data-i18n="hint"></span></button>
+                <button class="tool-button" type="button" data-action="undo"><span aria-hidden="true">↶</span><span data-i18n="undo"></span></button>
+                <button class="tool-button" type="button" data-action="reset-attempt"><span aria-hidden="true">⟳</span><span data-i18n="reset"></span></button>
+                <button class="tool-button" type="button" data-action="parent-prompt"><span aria-hidden="true">💬</span><span data-i18n="parentPrompt"></span></button>
+              </div>
+              <div class="strategy-shelf" id="strategyShelf"></div>
+              <div class="feedback" id="feedback" role="status" aria-live="polite">
+                <span class="feedback-icon" aria-hidden="true">✦</span>
+                <p data-i18n="readyToExplore"></p>
+              </div>
+              <div class="success-actions" id="successActions" hidden>
+                <button class="primary-button" type="button" data-action="next-mission"><span aria-hidden="true">→</span><span data-i18n="nextMission"></span></button>
+                <button class="secondary-button" type="button" data-action="another-way"><span aria-hidden="true">∞</span><span data-i18n="anotherWay"></span></button>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="screen" id="screen-collection" data-screen="collection" aria-labelledby="collectionTitle" hidden>
+          <div class="screen-heading">
+            <div><span class="eyebrow" data-i18n="discoveryBook"></span><h1 id="collectionTitle" data-i18n="collection"></h1></div>
+          </div>
+          <h2 data-i18n="rewardCollection"></h2>
+          <div class="collection-grid reward-grid" id="rewardGrid"></div>
+          <h2 data-i18n="cardGuide"></h2>
+          <div class="collection-grid guide-grid" id="cardGuide"></div>
+        </section>
+
+        <section class="screen" id="screen-parent" data-screen="parent" aria-labelledby="parentTitle" hidden>
+          <div class="screen-heading">
+            <div><span class="eyebrow" data-i18n="grownupsCorner"></span><h1 id="parentTitle" data-i18n="parentGuide"></h1></div>
+          </div>
+          <div class="guide-grid" id="parentGuideCards"></div>
+          <article class="adult-info">
+            <div class="scout-small" aria-hidden="true">✦</div>
+            <div>
+              <h2 data-i18n="whatIsTitle"></h2>
+              <p data-i18n="whatIsBody"></p>
+              <ul>
+                <li data-i18n="skillNumberSense"></li>
+                <li data-i18n="skillFlexibleThinking"></li>
+                <li data-i18n="skillConversation"></li>
+              </ul>
+            </div>
+          </article>
+        </section>
+
+        <section class="screen" id="screen-profile" data-screen="profile" aria-labelledby="profileTitle" hidden>
+          <div class="screen-heading">
+            <div><span class="eyebrow" data-i18n="playerSpace"></span><h1 id="profileTitle" data-i18n="profile"></h1></div>
+          </div>
+          <div class="profile-layout">
+            <article class="profile-card">
+              <div class="profile-avatar" id="profileAvatar" aria-hidden="true">★</div>
+              <div><span class="eyebrow" data-i18n="mathExplorer"></span><h2 id="profileName"></h2><p data-i18n="profileIntro"></p></div>
+            </article>
+            <div class="profile-stats" id="profileStats"></div>
+            <form class="profile-editor" id="profileForm">
+              <h2 data-i18n="editProfile"></h2>
+              <label><span data-i18n="playerName"></span><input id="profileNameInput" name="profileName" type="text" maxlength="18" autocomplete="nickname" data-i18n-placeholder="playerNamePlaceholder"></label>
+              <fieldset><legend data-i18n="chooseAvatar"></legend><div class="avatar-options" id="avatarOptions"></div></fieldset>
+              <button class="primary-button" type="submit" data-i18n="saveProfile"></button>
+            </form>
+          </div>
+        </section>
+      </main>
+
+      <nav class="nav-dock" data-i18n-aria-label="mainNavigation">
+        <button type="button" data-action="home" data-nav="home"><span aria-hidden="true">⌂</span><span data-i18n="home"></span></button>
+        <button type="button" data-action="map" data-nav="map"><span aria-hidden="true">🧭</span><span data-i18n="map"></span></button>
+        <button type="button" data-action="collection" data-nav="collection"><span aria-hidden="true">★</span><span data-i18n="collection"></span></button>
+        <button type="button" data-action="parent" data-nav="parent"><span aria-hidden="true">💬</span><span data-i18n="grownups"></span></button>
+        <button type="button" data-action="profile" data-nav="profile"><span aria-hidden="true">●</span><span data-i18n="profile"></span></button>
+      </nav>
+    </div>
+
+    <div class="modal-backdrop" id="tutorialModal" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle" hidden>
+      <section class="tutorial-card">
+        <div class="modal-topline"><span class="badge" id="tutorialProgress"></span><button class="icon-button" type="button" data-action="close-tutorial" data-i18n-aria-label="close"><span aria-hidden="true">×</span></button></div>
+        <div class="tutorial-visual" id="tutorialVisual" aria-hidden="true"></div>
+        <h2 id="tutorialTitle"></h2>
+        <p id="tutorialText"></p>
+        <div class="tutorial-dots" id="tutorialDots" aria-hidden="true"></div>
+        <div class="modal-actions">
+          <button class="secondary-button" type="button" data-action="skip-tutorial" data-i18n="skip"></button>
+          <button class="primary-button" type="button" data-action="next-tutorial" id="tutorialNext"></button>
+        </div>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" hidden>
+      <section class="settings-panel">
+        <div class="modal-topline"><h2 id="settingsTitle" data-i18n="settings"></h2><button class="icon-button" type="button" data-action="close-settings" data-i18n-aria-label="close"><span aria-hidden="true">×</span></button></div>
+        <form id="settingsForm">
+          <label><span data-i18n="language"></span><select name="language"><option value="en" data-i18n="languageEnglish"></option><option value="zh-CN" data-i18n="languageChinese"></option></select></label>
+          <label><span data-i18n="difficulty"></span><select name="difficulty"><option value="1" data-i18n="difficultyExplorer"></option><option value="2" data-i18n="difficultyPathfinder"></option><option value="3" data-i18n="difficultyMaster"></option></select></label>
+          <label class="switch-row"><span><b data-i18n="sound"></b><small data-i18n="soundHelp"></small></span><input type="checkbox" name="sound"></label>
+          <label class="switch-row"><span><b data-i18n="reducedMotion"></b><small data-i18n="motionHelp"></small></span><input type="checkbox" name="reducedMotion"></label>
+          <label><span data-i18n="animationIntensity"></span><select name="animationIntensity"><option value="calm" data-i18n="animationCalm"></option><option value="playful" data-i18n="animationPlayful"></option></select></label>
+          <label class="switch-row"><span><b data-i18n="showQuantities"></b><small data-i18n="quantitiesHelp"></small></span><input type="checkbox" name="showQuantities"></label>
+          <button class="secondary-button" type="button" data-action="replay-tutorial" data-i18n="replayTutorial"></button>
+          <button class="danger-button" type="button" data-action="reset-progress" data-i18n="resetProgress"></button>
+          <button class="primary-button" type="submit" data-i18n="done"></button>
+        </form>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="promptModal" role="dialog" aria-modal="true" aria-labelledby="promptTitle" hidden>
+      <section class="prompt-card">
+        <div class="prompt-scout" aria-hidden="true">✦</div>
+        <span class="eyebrow" data-i18n="talkTogether"></span>
+        <h2 id="promptTitle"></h2>
+        <button class="primary-button" type="button" data-action="close-prompt" data-i18n="backToCards"></button>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="rewardModal" role="dialog" aria-modal="true" aria-labelledby="rewardTitle" hidden>
+      <section class="reward-reveal">
+        <div class="reward-burst" aria-hidden="true">★</div>
+        <span class="eyebrow" data-i18n="newDiscovery"></span>
+        <h2 id="rewardTitle"></h2>
+        <p id="rewardReason"></p>
+        <button class="primary-button" type="button" data-action="collect-reward" data-i18n="addToCollection"></button>
+      </section>
+    </div>
+
+    <div class="toast-region sr-only" id="liveRegion" aria-live="polite" aria-atomic="true"></div>
+    <script type="module" src="./js/main.js?v=20260716-final"></script>
+  </body>
+</html>

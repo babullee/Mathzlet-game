@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="178" height="48" viewBox="0 0 178 48" role="img" aria-labelledby="title">
+  <title id="title">Mathzlet</title>
+  <defs>
+    <linearGradient id="tile" x1="4" y1="3" x2="43" y2="45" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffca4b"/>
+      <stop offset="1" stop-color="#f28a35"/>
+    </linearGradient>
+  </defs>
+  <rect x="2.5" y="2.5" width="43" height="43" rx="13" fill="url(#tile)" stroke="#17324d" stroke-width="3"/>
+  <path d="M11.5 34V15.5l11 11 11-11V34" fill="none" stroke="#17324d" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="37" cy="11" r="3" fill="#fffaf0" stroke="#17324d" stroke-width="2"/>
+  <text x="53" y="32" fill="#17324d" font-family="Nunito, Arial, sans-serif" font-size="24" font-weight="900" letter-spacing="-.8">Mathzlet</text>
+</svg>
