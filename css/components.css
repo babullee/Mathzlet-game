@@ -360,6 +360,15 @@ html[lang="zh-CN"] .eyebrow {
   transition: transform var(--duration-base) var(--ease-out), box-shadow var(--duration-base) var(--ease-out);
 }
 
+.destination-card:not(:disabled)::before {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgb(255 255 255 / 52%);
+  border-radius: inherit;
+  content: "";
+  pointer-events: none;
+}
+
 .destination-card:nth-child(even) {
   transform: translateX(.6rem);
 }
@@ -415,6 +424,28 @@ html[lang="zh-CN"] .eyebrow {
   font-size: var(--text-sm);
   font-weight: 700;
   line-height: 1.2;
+}
+
+.destination-progress {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 1.7rem;
+  margin-block-start: var(--space-2);
+  padding-inline: var(--space-2);
+  border: 1px solid color-mix(in srgb, var(--destination-color) 58%, var(--line));
+  border-radius: 999px;
+  background: rgb(255 255 255 / 72%);
+  color: var(--destination-ink);
+  font-size: .78rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+}
+
+.destination-card.is-complete {
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--destination-color) 25%, white), white 72%);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--destination-color) 40%, transparent), var(--shadow-card);
 }
 
 .destination-stamp {

@@ -76,7 +76,7 @@
             <div class="map-grid" id="mapGrid"></div>
             <div class="scout" aria-hidden="true"><span>✦</span><i></i></div>
           </div>
-          <button class="secondary-button finish-map-action" type="button" data-action="finish-session">
+          <button class="secondary-button finish-map-action" id="finishSessionButton" type="button" data-action="finish-session">
             <span aria-hidden="true">🏕</span><span data-i18n="finishSession"></span>
           </button>
         </section>
@@ -126,9 +126,9 @@
             <aside class="tools-panel">
               <h2 data-i18n="teamTools"></h2>
               <div class="action-row">
-                <button class="tool-button" type="button" data-action="hint"><span aria-hidden="true">✦</span><span data-i18n="hint"></span></button>
-                <button class="tool-button" type="button" data-action="undo"><span aria-hidden="true">↶</span><span data-i18n="undo"></span></button>
-                <button class="tool-button" type="button" data-action="reset-attempt"><span aria-hidden="true">⟳</span><span data-i18n="reset"></span></button>
+                <button class="tool-button" id="teamHintControl" type="button" data-action="hint"><span aria-hidden="true">✦</span><span data-i18n="hint"></span></button>
+                <button class="tool-button" id="undoButton" type="button" data-action="undo"><span aria-hidden="true">↶</span><span data-i18n="undo"></span></button>
+                <button class="tool-button" id="resetAttemptButton" type="button" data-action="reset-attempt"><span aria-hidden="true">⟳</span><span data-i18n="reset"></span></button>
                 <button class="tool-button" type="button" data-action="parent-prompt"><span aria-hidden="true">💬</span><span data-i18n="parentPrompt"></span></button>
               </div>
               <div class="strategy-shelf" id="strategyShelf"></div>

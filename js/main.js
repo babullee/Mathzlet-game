@@ -182,10 +182,13 @@ function renderMap(state) {
   map.replaceChildren();
   const completedCount = new Set(state.completedMissions).size;
   document.querySelector("#mapProgress").textContent = t("discoveriesCount", { count: completedCount });
+  document.querySelector("#finishSessionButton").hidden = completedCount === 0;
   LOCATIONS.forEach((location, index) => {
     const unlocked = index === 0 || completedCount >= index;
-    const completedHere = MISSIONS.filter((mission) => mission.location === location.id && state.completedMissions.includes(mission.id)).length;
-    const button = createElement("button", `destination-card destination-${location.id}${unlocked ? "" : " is-locked"}`);
+    const locationMissions = getMissionsForLocation(location.id, state.difficulty);
+    const completedHere = locationMissions.filter((mission) => state.completedMissions.includes(mission.id)).length;
+    const locationComplete = locationMissions.length > 0 && completedHere === locationMissions.length;
+    const button = createElement("button", `destination-card destination-${location.id}${unlocked ? "" : " is-locked"}${locationComplete ? " is-complete" : ""}`);
     button.type = "button";
     button.disabled = !unlocked;
     button.dataset.locationId = location.id;
@@ -193,7 +196,8 @@ function renderMap(state) {
     button.innerHTML = `<span class="destination-icon" aria-hidden="true">${locationIcon(location.icon)}</span>`;
     const copy = createElement("span", "destination-copy");
     copy.append(createElement("b", "", t(location.labelKey)), createElement("small", "", t(unlocked ? (completedHere ? "destinationReplay" : "destinationExplore") : "destinationSoon")));
-    const stamp = createElement("span", "destination-stamp", completedHere ? "✓" : unlocked ? "→" : "…");
+    if (unlocked) copy.append(createElement("span", "destination-progress", `${completedHere}/${locationMissions.length}`));
+    const stamp = createElement("span", "destination-stamp", locationComplete ? "✓" : unlocked ? "→" : "…");
     stamp.setAttribute("aria-hidden", "true");
     button.append(copy, stamp);
     button.addEventListener("click", () => startMission(location.id));
@@ -242,6 +246,10 @@ function renderGame(state) {
   const confirm = document.querySelector("#confirmButton");
   confirm.disabled = state.selectedCards.length < (mission.minimumCards ?? 1) || state.missionSolved;
   confirm.setAttribute("aria-disabled", String(confirm.disabled));
+  document.querySelector("#teamHintControl").disabled = state.missionSolved;
+  document.querySelector("#undoButton").disabled = state.history.length === 0 || state.missionSolved;
+  document.querySelector("#resetAttemptButton").disabled =
+    (state.selectedCards.length === 0 && !state.pendingCardId) || state.missionSolved;
   elements.successActions.hidden = !state.missionSolved;
   elements.successActions.querySelector("[data-action='another-way']").hidden = !hasUndiscoveredSolution(state);
 }
@@ -371,6 +379,8 @@ function undoSelection() {
 }
 
 function resetAttempt() {
+  const state = store.getState();
+  if (state.missionSolved || (state.selectedCards.length === 0 && !state.pendingCardId)) return;
   store.setState({ selectedCards: [], pendingCardId: null, history: [], missionSolved: false });
   setFeedback("freshTry", "neutral");
 }
@@ -458,17 +468,25 @@ function useStrategy(strategyId) {
   if (!state.currentMission || state.strategyUsed || state.missionSolved) return;
   const strategy = STRATEGY_CARDS.find((item) => item.id === strategyId);
   if (!strategy) return;
+  let applied = false;
   if (strategy.action === "ask-clue") {
     showHint();
+    applied = true;
   } else if (strategy.action === "draw-extra-card") {
     const usedValues = new Set(state.availableCards.map((card) => card.value));
     const extra = NUMBER_CARDS.find((card) => card.difficulty <= state.difficulty && !usedValues.has(card.value));
-    if (extra) store.setState({ availableCards: [...state.availableCards, { ...extra, instanceId: `${extra.id}-extra` }] });
+    if (extra) {
+      store.setState({ availableCards: [...state.availableCards, { ...extra, instanceId: `${extra.id}-extra` }] });
+      applied = true;
+    }
   } else if (strategy.action === "swap-one") {
     const available = state.availableCards.filter((card) => !state.selectedCards.some((selected) => selected.instanceId === card.instanceId));
     const remove = available[0];
     const replacement = NUMBER_CARDS.find((card) => card.difficulty <= state.difficulty && !state.availableCards.some((item) => item.value === card.value));
-    if (remove && replacement) store.setState({ availableCards: state.availableCards.map((card) => card.instanceId === remove.instanceId ? { ...replacement, instanceId: `${replacement.id}-swap` } : card) });
+    if (remove && replacement) {
+      store.setState({ availableCards: state.availableCards.map((card) => card.instanceId === remove.instanceId ? { ...replacement, instanceId: `${replacement.id}-swap` } : card) });
+      applied = true;
+    }
   } else if (strategy.action === "echo-card") {
     const last = state.selectedCards.at(-1);
     if (!last || state.selectedCards.length >= state.currentMission.maximumCards) {
@@ -476,8 +494,19 @@ function useStrategy(strategyId) {
       return;
     }
     store.setState({ selectedCards: [...state.selectedCards, { ...last, instanceId: `${last.instanceId}-echo` }], history: [...state.history, state.selectedCards] });
+    applied = true;
   } else if (strategy.action === "nudge-target" && Number.isFinite(state.currentMission.target)) {
-    store.setState({ currentMission: { ...state.currentMission, target: state.currentMission.target + 1 } });
+    const candidates = [state.currentMission.target + 1, state.currentMission.target - 1]
+      .map((target) => ({ ...state.currentMission, target }));
+    const solvableMission = candidates.find((mission) => enumerateValidSolutions(mission, state.availableCards).length > 0);
+    if (solvableMission) {
+      store.setState({ currentMission: solvableMission });
+      applied = true;
+    }
+  }
+  if (!applied) {
+    setFeedback("strategyUnavailable", "hint");
+    return;
   }
   store.setState({ strategyUsed: strategyId });
   setFeedback("strategyUsed", "success");
