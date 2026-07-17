@@ -4,6 +4,7 @@ import { NUMBER_CARDS, PUZZLE_CARD_ACTIVITIES, STRATEGY_CARDS } from "../js/data
 import { LOCATIONS, MISSIONS } from "../js/data/missions.js";
 import { REWARDS } from "../js/data/rewards.js";
 import translations from "../js/data/translations.js";
+import { LEVELS, RANKS, WORLDS } from "../js/data/worlds.js";
 import {
   createMissionDeal,
   enumerateValidSolutions,
@@ -65,9 +66,12 @@ for (const reward of REWARDS) {
 assert.ok(NUMBER_CARDS.length >= 12, "At least 12 number cards are required");
 assert.ok(PUZZLE_CARD_ACTIVITIES.length >= 3, "At least 3 puzzle activities are required");
 assert.ok(STRATEGY_CARDS.length >= 4, "At least 4 strategy cards are required");
-assert.ok(REWARDS.length >= 6, "At least 6 rewards are required");
-assert.ok(MISSIONS.length >= 8, "At least 8 missions are required");
-assert.ok(LOCATIONS.length >= 3, "At least 3 map destinations are required");
+assert.ok(REWARDS.length >= 20, "At least 20 rewards are required");
+assert.ok(MISSIONS.length >= 150, "At least 150 missions are required");
+assert.ok(LEVELS.length >= 42, "At least 42 levels are required");
+assert.equal(WORLDS.length, 5, "Exactly five adventure worlds are required");
+assert.equal(RANKS.length, 10, "The explorer growth path needs ten ranks");
+assert.equal(LOCATIONS.length, WORLDS.length, "Every world needs one map destination");
 assert.deepEqual([...new Set(MISSIONS.map((mission) => mission.difficulty))].sort(), [1, 2, 3]);
 
 const requiredMissionTypes = [
@@ -77,6 +81,10 @@ const requiredMissionTypes = [
   "pattern",
   "classification",
   "open-ended",
+  "match-equivalent",
+  "odd-one-out",
+  "compound-target",
+  "sequence-build",
 ];
 for (const type of requiredMissionTypes) {
   assert.ok(MISSIONS.some((mission) => mission.type === type), `Missing mission type: ${type}`);
@@ -144,11 +152,22 @@ assert.match(html, /id="solutionZone"[^>]+role="group"/, "Solution area must not
 assert.match(html, /id="solutionPlaceButton"[^>]+type="button"/, "Solution placement needs a semantic button");
 assert.match(html, /class="skip-link"[^>]+href="#mainContent"/, "A skip link must target main content");
 assert.match(html, /id="mainContent"[^>]+tabindex="-1"/, "Skip-link target must accept focus");
-assert.equal((html.match(/role="dialog"/g) ?? []).length, 4, "Every overlay must expose dialog semantics");
-assert.equal((html.match(/aria-modal="true"/g) ?? []).length, 4, "Every dialog must be modal to assistive tech");
+const dialogCount = (html.match(/role="dialog"/g) ?? []).length;
+const modalCount = (html.match(/aria-modal="true"/g) ?? []).length;
+assert.ok(dialogCount >= 4, "Every overlay must expose dialog semantics");
+assert.equal(modalCount, dialogCount, "Every dialog must be modal to assistive tech");
 assert.match(html, /id="feedback"[^>]+role="status"[^>]+aria-live="polite"/, "Feedback needs a polite live region");
+assert.match(html, /id="liveRegion"[^>]+aria-live="polite"[^>]+aria-atomic="true"/, "Global announcements need an atomic polite live region");
 assert.match(accessibilitySource, /event\.key === "Escape"/, "Modal keyboard support must include Escape");
+assert.match(accessibilitySource, /event\.key !== "Tab"/, "Modal keyboard support must contain Tab focus");
+assert.match(accessibilitySource, /keyboardSupportInstalled/, "Modal keyboard support must resist duplicate registration");
+assert.match(accessibilitySource, /setAttribute\("inert"/, "Background content must become inert while a modal is open");
+assert.match(accessibilitySource, /visibleModals\(\)\.at\(-1\)/, "Keyboard support must target the topmost modal");
+assert.match(accessibilitySource, /aria-hidden/, "Modal visibility must also be exposed to assistive technology");
+assert.match(accessibilitySource, /requestAnimationFrame/, "Live announcements and modal focus must wait for rendered content");
 assert.match(mainSource, /focusAfterRender|focusFirstAvailableCard/, "Dynamic board updates must restore useful focus");
+assert.doesNotMatch(html, /\bon(?:click|keydown|touchstart)=/i, "Event handlers must not be embedded in markup");
+assert.doesNotMatch(html, /\bdraggable="true"/i, "Drag and drop must not be required to play");
 
 // Touch, focus, forced-colors, and reduced-motion CSS contracts.
 assert.match(variableCss, /--target-min:\s*3rem/, "Touch target token must be at least 48 CSS pixels");

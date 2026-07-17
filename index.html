@@ -8,14 +8,14 @@
     <title>Mathzlet</title>
     <link rel="icon" type="image/png" href="./logo.png">
     <link rel="preload" href="./assets/illustrations/adventure-map.webp" as="image" type="image/webp">
-    <link rel="stylesheet" href="./css/variables.css?v=20260717-ui">
-    <link rel="stylesheet" href="./css/base.css?v=20260717-ui">
-    <link rel="stylesheet" href="./css/layout.css?v=20260717-ui">
-    <link rel="stylesheet" href="./css/components.css?v=20260717-ui">
-    <link rel="stylesheet" href="./css/cards.css?v=20260717-ui">
-    <link rel="stylesheet" href="./css/game.css?v=20260717-ui">
-    <link rel="stylesheet" href="./css/animations.css?v=20260717-ui">
-    <link rel="stylesheet" href="./css/responsive.css?v=20260717-ui">
+    <link rel="stylesheet" href="./css/variables.css?v=20260717-growth">
+    <link rel="stylesheet" href="./css/base.css?v=20260717-growth">
+    <link rel="stylesheet" href="./css/layout.css?v=20260717-growth">
+    <link rel="stylesheet" href="./css/components.css?v=20260717-growth">
+    <link rel="stylesheet" href="./css/cards.css?v=20260717-growth">
+    <link rel="stylesheet" href="./css/game.css?v=20260717-growth">
+    <link rel="stylesheet" href="./css/animations.css?v=20260717-growth">
+    <link rel="stylesheet" href="./css/responsive.css?v=20260717-growth">
   </head>
   <body>
     <a class="skip-link" href="#mainContent" data-i18n="skipToContent"></a>
@@ -81,13 +81,31 @@
           </button>
         </section>
 
-        <section class="screen" id="screen-game" data-screen="game" aria-labelledby="gameTitle" hidden>
+        <section class="screen level-select-screen" id="screen-level-select" data-screen="level-select" aria-labelledby="levelSelectTitle" hidden>
+          <div class="screen-heading">
+            <div>
+              <span class="eyebrow" id="levelWorldName"></span>
+              <h1 id="levelSelectTitle" data-i18n="chooseLevel"></h1>
+            </div>
+            <button class="secondary-button" type="button" data-action="map">
+              <span aria-hidden="true">↩</span><span data-i18n="backToMap"></span>
+            </button>
+          </div>
+          <div class="growth-summary" id="levelGrowthSummary" aria-live="polite"></div>
+          <div class="level-grid" id="levelGrid" role="list"></div>
+        </section>
+
+        <section class="screen game-screen" id="screen-game" data-screen="game" aria-labelledby="gameTitle" hidden>
           <div class="screen-heading game-heading">
             <div>
               <span class="eyebrow" id="locationName"></span>
               <h1 id="gameTitle" data-i18n="mission"></h1>
             </div>
-            <div class="badge" id="missionProgress"></div>
+            <div class="game-status" aria-live="polite">
+              <span class="badge" id="missionProgress"></span>
+              <span class="badge"><span data-i18n="experience"></span> <b id="gameExperience">0</b></span>
+              <span class="badge" aria-label=""><span aria-hidden="true">★</span> <b id="gameStars">0</b></span>
+            </div>
           </div>
           <div class="game-layout">
             <article class="mission-panel">
@@ -141,6 +159,36 @@
                 <button class="secondary-button" type="button" data-action="another-way"><span aria-hidden="true">∞</span><span data-i18n="anotherWay"></span></button>
               </div>
             </aside>
+          </div>
+        </section>
+
+        <section class="screen completion-screen" id="screen-mission-complete" data-screen="mission-complete" aria-labelledby="completionTitle" hidden>
+          <div class="completion-card" role="region" aria-live="polite">
+            <div class="completion-symbol" id="completionSymbol" aria-hidden="true">★</div>
+            <span class="eyebrow" id="completionEyebrow" data-i18n="greatStrategy"></span>
+            <h1 id="completionTitle"></h1>
+            <p id="completionMessage"></p>
+            <div class="completion-stats">
+              <div><span data-i18n="experience"></span><strong id="completionXp">+0 XP</strong></div>
+              <div><span data-i18n="stars"></span><strong id="completionStars">★ 0</strong></div>
+              <div><span data-i18n="rank"></span><strong id="completionRank"></strong></div>
+            </div>
+            <div class="rank-progress">
+              <div><span id="rankProgressLabel"></span><span id="rankProgressValue"></span></div>
+              <progress id="rankProgressBar" max="100" value="0"></progress>
+            </div>
+            <p class="unlock-message" id="completionUnlock" hidden></p>
+            <div class="completion-actions">
+              <button class="primary-button" id="completionNextButton" type="button" data-action="advance-progression">
+                <span aria-hidden="true">→</span><span id="completionNextLabel" data-i18n="nextMission"></span>
+              </button>
+              <button class="secondary-button" type="button" data-action="replay-current">
+                <span aria-hidden="true">↻</span><span data-i18n="playAgain"></span>
+              </button>
+              <button class="secondary-button" type="button" data-action="map">
+                <span aria-hidden="true">⌖</span><span data-i18n="returnToMap"></span>
+              </button>
+            </div>
           </div>
         </section>
 
@@ -253,6 +301,6 @@
     </div>
 
     <div class="toast-region sr-only" id="liveRegion" aria-live="polite" aria-atomic="true"></div>
-    <script type="module" src="./js/main.js?v=20260717-ui"></script>
+    <script type="module" src="./js/main.js?v=20260717-growth"></script>
   </body>
 </html>

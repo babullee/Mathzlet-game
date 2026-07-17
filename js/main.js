@@ -5,9 +5,17 @@ import { showScreen } from "./router.js";
 import { closeModal, installModalKeyboardSupport, openModal, announce } from "./accessibility.js";
 import { renderTutorialStep, tutorialSteps } from "./tutorial.js";
 import { NUMBER_CARDS, STRATEGY_CARDS } from "./data/cards.js";
-import { LOCATIONS, MISSIONS, getMissionsForLocation } from "./data/missions.js";
+import { MISSIONS, getMissionById, getMissionsForLevel } from "./data/missions.js";
 import { REWARDS, getRewardById } from "./data/rewards.js";
-import { dealCardsForMission, enumerateValidSolutions, getNextMission } from "./game/game-engine.js";
+import { LEVELS, WORLDS, getLevelById, getWorldById } from "./data/worlds.js";
+import { dealCardsForMission, enumerateValidSolutions } from "./game/game-engine.js";
+import {
+  LIFECYCLE,
+  PROGRESSION_ACTION,
+  getPlayerRank,
+  getTotalStars,
+  resolveNextAction,
+} from "./game/progression.js";
 import { validateMission } from "./game/validation.js";
 
 const store = createStore(createInitialState(getInitialLanguage()));
@@ -15,6 +23,7 @@ let tutorialIndex = 0;
 let lastParentPrompt = -1;
 let resetArmed = false;
 let currentFeedbackKey = "readyToExplore";
+let lastAdvanceTime = 0;
 const PROFILE_AVATARS = Object.freeze({ star: "★", fox: "🦊", rocket: "🚀", leaf: "🍃" });
 
 const elements = {
@@ -44,7 +53,9 @@ function renderApp(state) {
   document.querySelector("meta[name='description']").content = t("metaDescription");
   syncSettingsForm(state);
   renderMap(state);
+  renderLevelSelect(state);
   renderGame(state);
+  renderCompletion(state);
   renderCollections(state);
   renderParentGuide();
   renderProfile(state);
@@ -101,12 +112,14 @@ function installEventHandlers() {
 }
 
 function handleAction(action, button) {
-  const simpleRoutes = { home: "home", map: "map", collection: "collection", parent: "parent", profile: "profile" };
+  const simpleRoutes = { home: "home", collection: "collection", parent: "parent", profile: "profile" };
   if (simpleRoutes[action]) {
     store.setState({ currentScreen: simpleRoutes[action] }, { persist: false });
     return;
   }
-  if (action === "start") {
+  if (action === "map") {
+    store.dispatch({ type: PROGRESSION_ACTION.RETURN_TO_MAP });
+  } else if (action === "start") {
     if (store.getState().tutorialCompleted) goToMap();
     else openTutorial();
   } else if (action === "open-tutorial" || action === "replay-tutorial") {
@@ -140,11 +153,16 @@ function handleAction(action, button) {
     showParentPrompt();
   } else if (action === "close-prompt") {
     closeModal(elements.promptModal);
-  } else if (action === "next-mission") {
-    startMission(store.getState().currentLocation);
+  } else if (action === "start-level") {
+    startLevel(button.dataset.levelId);
+  } else if (action === "advance-progression" || action === "next-mission") {
+    advanceProgression();
+  } else if (action === "replay-current") {
+    const missionId = store.getState().completion?.missionId ?? store.getState().currentMissionId;
+    if (missionId) startMissionById(missionId, true);
   } else if (action === "another-way") {
     if (hasUndiscoveredSolution(store.getState())) {
-      store.setState({ selectedCards: [], pendingCardId: null, history: [], missionSolved: false });
+      setRunState({ selectedCards: [], pendingCardId: null, history: [] });
       setFeedback("anotherWayPrompt", "neutral");
       focusFirstAvailableCard();
     } else {
@@ -162,7 +180,7 @@ function handleAction(action, button) {
 }
 
 function goToMap() {
-  store.setState({ currentScreen: "map" }, { persist: false });
+  store.dispatch({ type: PROGRESSION_ACTION.RETURN_TO_MAP });
 }
 
 function openTutorial() {
@@ -181,70 +199,189 @@ function renderMap(state) {
   const map = document.querySelector("#mapGrid");
   map.replaceChildren();
   const completedCount = new Set(state.completedMissions).size;
-  document.querySelector("#mapProgress").textContent = t("discoveriesCount", { count: completedCount });
+  document.querySelector("#mapProgress").textContent =
+    `${t("experience")} ${state.progress.experience} · ★ ${getTotalStars(state)} · ${t("discoveriesCount", { count: completedCount })}`;
   document.querySelector("#finishSessionButton").hidden = completedCount === 0;
-  LOCATIONS.forEach((location, index) => {
-    const unlocked = index === 0 || completedCount >= index;
-    const locationMissions = getMissionsForLocation(location.id, state.difficulty);
-    const completedHere = locationMissions.filter((mission) => state.completedMissions.includes(mission.id)).length;
-    const locationComplete = locationMissions.length > 0 && completedHere === locationMissions.length;
-    const button = createElement("button", `destination-card destination-${location.id}${unlocked ? "" : " is-locked"}${locationComplete ? " is-complete" : ""}`);
+  WORLDS.forEach((world) => {
+    const worldRecord = state.progress.worldRecords[world.id];
+    const unlocked = worldRecord?.status !== "locked";
+    const worldLevels = LEVELS.filter((level) => level.worldId === world.id);
+    const completedHere = worldLevels.filter(
+      (level) => state.progress.levelRecords[level.id]?.status === "completed",
+    ).length;
+    const worldComplete = worldRecord?.status === "completed";
+    const button = createElement(
+      "button",
+      `destination-card destination-${world.id}${unlocked ? "" : " is-locked"}${worldComplete ? " is-complete" : ""}`,
+    );
     button.type = "button";
     button.disabled = !unlocked;
-    button.dataset.locationId = location.id;
-    button.setAttribute("aria-label", `${t(location.labelKey)}. ${t(unlocked ? "destinationReady" : "destinationSoon")}`);
-    button.innerHTML = `<span class="destination-icon" aria-hidden="true">${locationIcon(location.icon)}</span>`;
+    button.setAttribute(
+      "aria-label",
+      `${t(world.nameKey)}. ${t(unlocked ? "destinationReady" : "destinationSoon")}`,
+    );
+    button.innerHTML =
+      `<span class="destination-icon" aria-hidden="true">${locationIcon(world.icon)}</span>`;
     const copy = createElement("span", "destination-copy");
-    copy.append(createElement("b", "", t(location.labelKey)), createElement("small", "", t(unlocked ? (completedHere ? "destinationReplay" : "destinationExplore") : "destinationSoon")));
-    if (unlocked) copy.append(createElement("span", "destination-progress", `${completedHere}/${locationMissions.length}`));
-    const stamp = createElement("span", "destination-stamp", locationComplete ? "✓" : unlocked ? "→" : "…");
+    copy.append(
+      createElement("b", "", t(world.nameKey)),
+      createElement(
+        "small",
+        "",
+        t(unlocked ? (completedHere ? "destinationReplay" : "destinationExplore") : "destinationSoon"),
+      ),
+    );
+    if (unlocked) {
+      copy.append(createElement("span", "destination-progress", `${completedHere}/${worldLevels.length}`));
+    }
+    const stamp = createElement("span", "destination-stamp", worldComplete ? "✓" : unlocked ? "→" : "…");
     stamp.setAttribute("aria-hidden", "true");
     button.append(copy, stamp);
-    button.addEventListener("click", () => startMission(location.id));
+    button.addEventListener("click", () => openWorldLevels(world.id));
     map.append(button);
   });
 }
 
-function startMission(locationId) {
+function openWorldLevels(worldId) {
+  if (store.getState().progress.worldRecords[worldId]?.status === "locked") return;
+  store.setState({ currentWorldId: worldId, currentScreen: "level-select" });
+}
+
+function renderLevelSelect(state) {
+  const world = getWorldById(state.currentWorldId) ?? WORLDS[0];
+  if (!world) return;
+  document.querySelector("#levelWorldName").textContent = t(world.nameKey);
+  const rank = getPlayerRank(state);
+  document.querySelector("#levelGrowthSummary").replaceChildren(
+    createElement("span", "badge", `${t("rank")} ${rank.number}: ${t(rank.nameKey)}`),
+    createElement("span", "badge", `${t("experience")} ${state.progress.experience}`),
+    createElement("span", "badge", `★ ${getTotalStars(state)}`),
+  );
+  const grid = document.querySelector("#levelGrid");
+  grid.replaceChildren();
+  LEVELS.filter((level) => level.worldId === world.id).forEach((level) => {
+    const record = state.progress.levelRecords[level.id];
+    const locked = record?.status === "locked";
+    const completedMissions = level.missionIds.filter(
+      (missionId) => state.progress.missionRecords[missionId]?.status === "completed",
+    ).length;
+    const button = createElement("button", `level-card${locked ? " is-locked" : ""}`);
+    button.type = "button";
+    button.dataset.action = "start-level";
+    button.dataset.levelId = level.id;
+    button.disabled = locked;
+    button.setAttribute("role", "listitem");
+    button.setAttribute(
+      "aria-label",
+      `${t(level.nameKey, level.nameParams)}. ${
+        locked
+          ? t("destinationSoon")
+          : t("missionProgressCount", { count: completedMissions, total: level.missionIds.length })
+      }`,
+    );
+    const copy = createElement("span", "level-copy");
+    copy.append(
+      createElement("b", "", t(level.nameKey, level.nameParams)),
+      createElement(
+        "small",
+        "",
+        locked
+          ? t("destinationSoon")
+          : t("missionProgressCount", { count: completedMissions, total: level.missionIds.length }),
+      ),
+    );
+    const stars = Math.max(0, Math.min(3, record?.stars ?? 0));
+    button.append(
+      createElement("span", "level-number", String(level.order)),
+      copy,
+      createElement("span", "level-stars", `${"★".repeat(stars)}${"☆".repeat(3 - stars)}`),
+    );
+    grid.append(button);
+  });
+}
+
+function startLevel(levelId) {
+  const level = getLevelById(levelId);
   const state = store.getState();
-  const mission = getNextMission(locationId, state.difficulty, state.completedMissions, state.currentMission?.id) ?? getMissionsForLocation(locationId, state.difficulty)[0];
-  if (!mission) {
-    setFeedback("cardsNeedFriend", "clue");
+  if (!level || state.progress.levelRecords[levelId]?.status === "locked") return;
+  const missions = getMissionsForLevel(levelId);
+  const mission =
+    missions.find((item) => state.progress.missionRecords[item.id]?.status === "unlocked") ??
+    missions.find((item) => state.progress.missionRecords[item.id]?.status === "completed") ??
+    null;
+  if (mission) {
+    startMissionById(
+      mission.id,
+      state.progress.missionRecords[mission.id]?.status === "completed",
+    );
+  }
+}
+
+function startMissionById(missionId, replay = false) {
+  const state = store.getState();
+  const mission = getMissionById(missionId);
+  const record = state.progress.missionRecords[missionId];
+  if (!mission || !record || record.status === "locked") {
+    announce(t("recoveryMessage"));
     return;
   }
-  const cards = dealCardsForMission(mission);
-  store.setState({
-    currentScreen: "game",
-    currentLocation: locationId,
-    currentMission: mission,
-    availableCards: cards,
-    selectedCards: [],
-    pendingCardId: null,
-    history: [],
-    missionSolved: false,
-    hintStep: 0,
-    strategyUsed: null,
+  store.dispatch({
+    type:
+      replay || record.status === "completed"
+        ? PROGRESSION_ACTION.REPLAY_MISSION
+        : PROGRESSION_ACTION.START_MISSION,
+    missionId,
+    availableCards: dealCardsForMission(mission),
   });
   requestAnimationFrame(() => setFeedback("readyToExplore", "neutral"));
   focusAfterRender("#gameTitle");
 }
 
+function advanceProgression() {
+  const now = Date.now();
+  if (now - lastAdvanceTime < 450) return;
+  const state = store.getState();
+  if (state.lifecycle !== LIFECYCLE.COMPLETED || !state.completion) return;
+  const next = resolveNextAction(state);
+  const mission = next?.missionId ? getMissionById(next.missionId) : null;
+  lastAdvanceTime = now;
+  store.dispatch({
+    type: PROGRESSION_ACTION.ADVANCE,
+    checkpointId: state.completion.checkpointId,
+    availableCards: mission ? dealCardsForMission(mission) : [],
+  });
+}
+
 function renderGame(state) {
   const mission = state.currentMission;
   if (!mission) return;
-  document.querySelector("#locationName").textContent = t(LOCATIONS.find((location) => location.id === state.currentLocation)?.labelKey ?? "adventureMap");
-  document.querySelector("#missionTitle").textContent = t(mission.titleKey);
-  document.querySelector("#missionInstruction").textContent = t(mission.instructionKey);
+  const world = getWorldById(state.currentWorldId);
+  const level = getLevelById(state.currentLevelId);
+  document.querySelector("#locationName").textContent =
+    `${t(world?.nameKey ?? "adventureMap")} · ${t(level?.nameKey ?? "mission", level?.nameParams)}`;
+  document.querySelector("#missionTitle").textContent = t(mission.titleKey, mission.titleParams);
+  document.querySelector("#missionInstruction").textContent = t(
+    mission.instructionKey,
+    mission.instructionParams,
+  );
   document.querySelector("#missionTarget").textContent = formatMissionTarget(mission);
-  const locationMissions = getMissionsForLocation(state.currentLocation, state.difficulty);
-  const completedHere = locationMissions.filter((item) => state.completedMissions.includes(item.id)).length;
-  document.querySelector("#missionProgress").textContent = t("missionProgressCount", { count: completedHere, total: locationMissions.length });
+  const levelMissions = getMissionsForLevel(state.currentLevelId);
+  const missionIndex = Math.max(0, levelMissions.findIndex((item) => item.id === mission.id));
+  document.querySelector("#missionProgress").textContent = t("missionProgressCount", {
+    count: missionIndex + 1,
+    total: levelMissions.length,
+  });
+  document.querySelector("#gameExperience").textContent = String(state.progress.experience);
+  document.querySelector("#gameStars").textContent = String(getTotalStars(state));
   renderCardHand(state);
   renderSolution(state);
   renderStrategies(state);
   renderDiscoveredSolutions(state);
   const confirm = document.querySelector("#confirmButton");
-  confirm.disabled = state.selectedCards.length < (mission.minimumCards ?? 1) || state.missionSolved;
+  confirm.disabled =
+    state.lifecycle !== LIFECYCLE.ACTIVE ||
+    state.selectedCards.length < (mission.minimumCards ?? 1) ||
+    state.missionSolved;
   confirm.setAttribute("aria-disabled", String(confirm.disabled));
   document.querySelector("#teamHintControl").disabled = state.missionSolved;
   document.querySelector("#undoButton").disabled = state.history.length === 0 || state.missionSolved;
@@ -252,6 +389,72 @@ function renderGame(state) {
     (state.selectedCards.length === 0 && !state.pendingCardId) || state.missionSolved;
   elements.successActions.hidden = !state.missionSolved;
   elements.successActions.querySelector("[data-action='another-way']").hidden = !hasUndiscoveredSolution(state);
+}
+
+function renderCompletion(state) {
+  const completion = state.completion;
+  if (!completion) return;
+  const kind = completion.kind ?? "mission-complete";
+  const titleKeys = {
+    "mission-complete": "missionComplete",
+    "level-complete": "levelComplete",
+    "world-complete": "worldComplete",
+    "game-complete": "gameComplete",
+  };
+  const messageKeys = {
+    "mission-complete": "greatStrategy",
+    "level-complete": "contentUnlocked",
+    "world-complete": "contentUnlocked",
+    "game-complete": "allWorldsComplete",
+  };
+  document.querySelector("#completionTitle").textContent = t(titleKeys[kind] ?? "missionComplete");
+  document.querySelector("#completionMessage").textContent = t(messageKeys[kind] ?? "greatStrategy");
+  document.querySelector("#completionSymbol").textContent =
+    kind === "world-complete" ? "✦" : kind === "game-complete" ? "🏆" : "★";
+  document.querySelector("#completionXp").textContent = t("experienceEarned", {
+    xp: completion.xpEarned ?? 0,
+  });
+  document.querySelector("#completionStars").textContent =
+    `★ ${completion.totalStars ?? getTotalStars(state)}`;
+
+  const rank = getPlayerRank(state);
+  document.querySelector("#completionRank").textContent = `${rank.number}. ${t(rank.nameKey)}`;
+  document.querySelector("#rankProgressBar").value = Math.round(rank.progress * 100);
+  document.querySelector("#rankProgressValue").textContent = `${Math.round(rank.progress * 100)}%`;
+  document.querySelector("#rankProgressLabel").textContent = rank.next
+    ? t("nextRank", { rank: t(rank.next.nameKey) })
+    : t("maximumRank");
+
+  const unlock = (completion.unlocks ?? []).find(
+    (item) => getWorldById(item.id) || getLevelById(item.id),
+  );
+  const unlockMessage = document.querySelector("#completionUnlock");
+  if (unlock) {
+    const unlockedWorld = getWorldById(unlock.id);
+    const unlockedLevel = getLevelById(unlock.id);
+    unlockMessage.textContent = unlockedWorld
+      ? `${t("newWorldUnlocked")}: ${t(unlockedWorld.nameKey)}`
+      : `${t("newLevelUnlocked")}: ${t(unlockedLevel.nameKey, unlockedLevel.nameParams)}`;
+    unlockMessage.hidden = false;
+  } else {
+    unlockMessage.hidden = true;
+  }
+
+  const next = resolveNextAction(state);
+  const nextLabels = {
+    "next-mission": "nextMission",
+    "level-complete": "continueAdventure",
+    "next-level": "nextLevel",
+    "world-complete": "continueAdventure",
+    "next-world": "nextWorld",
+    "game-complete": "returnToMap",
+  };
+  const nextButton = document.querySelector("#completionNextButton");
+  nextButton.dataset.action = next?.kind === "game-complete" && kind === "game-complete"
+    ? "map"
+    : "advance-progression";
+  document.querySelector("#completionNextLabel").textContent =
+    t(nextLabels[next?.kind] ?? "continueAdventure");
 }
 
 function hasUndiscoveredSolution(state) {
@@ -315,6 +518,32 @@ function createGameCard(card, selected, pending, compact = false) {
   return button;
 }
 
+function setRunState(update, options = {}) {
+  return store.setState((state) => {
+    const patch = typeof update === "function" ? update(state) : update;
+    if (!state.activeRun) return { ...state, ...patch };
+    const availableCards = patch.availableCards ?? state.availableCards;
+    const selectedCards = patch.selectedCards ?? state.selectedCards;
+    const strategyIds = patch.strategyUsed === null
+      ? []
+      : patch.strategyUsed
+        ? [...new Set([...(state.activeRun.usedStrategyIds ?? []), patch.strategyUsed])]
+        : state.activeRun.usedStrategyIds;
+    return {
+      ...state,
+      ...patch,
+      activeRun: {
+        ...state.activeRun,
+        availableCards,
+        selectedInstanceIds: selectedCards.map((card) => card.instanceId ?? card.id),
+        history: patch.history ?? state.history,
+        hintsUsed: patch.hintStep ?? state.activeRun.hintsUsed,
+        usedStrategyIds: strategyIds,
+      },
+    };
+  }, options);
+}
+
 function handleCardActivation(cardId, area) {
   if (area === "solution") {
     removeCardFromSolution(cardId);
@@ -342,7 +571,7 @@ function addCardToSolution(cardId) {
     setFeedback("trayIsFull", "clue");
     return;
   }
-  store.setState({
+  setRunState({
     selectedCards: [...state.selectedCards, card],
     pendingCardId: null,
     history: [...state.history, state.selectedCards],
@@ -359,7 +588,7 @@ function addCardToSolution(cardId) {
 
 function removeCardFromSolution(cardId) {
   const state = store.getState();
-  store.setState({
+  setRunState({
     selectedCards: state.selectedCards.filter((card) => card.instanceId !== cardId),
     history: [...state.history, state.selectedCards],
   });
@@ -374,23 +603,34 @@ function undoSelection() {
     return;
   }
   const previous = state.history.at(-1);
-  store.setState({ selectedCards: previous, pendingCardId: null, history: state.history.slice(0, -1), missionSolved: false });
+  setRunState({ selectedCards: previous, pendingCardId: null, history: state.history.slice(0, -1) });
   setFeedback("undoComplete", "neutral");
 }
 
 function resetAttempt() {
   const state = store.getState();
   if (state.missionSolved || (state.selectedCards.length === 0 && !state.pendingCardId)) return;
-  store.setState({ selectedCards: [], pendingCardId: null, history: [], missionSolved: false });
+  setRunState({ selectedCards: [], pendingCardId: null, history: [] });
   setFeedback("freshTry", "neutral");
 }
 
 function confirmSolution() {
   const state = store.getState();
   const mission = state.currentMission;
-  if (!mission) return;
+  if (
+    !mission ||
+    state.lifecycle !== LIFECYCLE.ACTIVE ||
+    state.transition.locked
+  ) return;
   const previous = state.discoveredSolutions[mission.id] ?? [];
-  const result = validateMission(mission, state.selectedCards, previous);
+  let result;
+  try {
+    result = validateMission(mission, state.selectedCards, previous);
+  } catch (error) {
+    console.error("Mathzlet mission validation failed", error);
+    setFeedback("recoveryMessage", "clue");
+    return;
+  }
   if (!result.valid) {
     setFeedback(result.reasonKey || "tryAgain", "clue");
     playTone("clue");
@@ -400,31 +640,25 @@ function confirmSolution() {
     setFeedback("solutionAlreadyFound", "clue");
     return;
   }
-  const found = [...previous, result.canonical];
-  const discoveredSolutions = { ...state.discoveredSolutions, [mission.id]: found };
-  const required = mission.solutionsRequired ?? 1;
-  if (found.length < required) {
-    store.setState({ discoveredSolutions, selectedCards: [], pendingCardId: null, history: [] });
+  store.dispatch({
+    type: PROGRESSION_ACTION.COMPLETE_MISSION,
+    result: {
+      valid: true,
+      canonicalSolution: result.canonical,
+      bonusCompleted: previous.length > 0 || Boolean(mission.strategyChallenge),
+    },
+  });
+  const nextState = store.getState();
+  if (nextState.lifecycle === LIFECYCLE.ACTIVE) {
+    setRunState({ selectedCards: [], pendingCardId: null, history: [] });
     setFeedback("foundOneFindAnother", "success");
     playTone("success");
     focusFirstAvailableCard();
     return;
   }
-
-  const completedMissions = [...new Set([...state.completedMissions, mission.id])];
-  const isNewReward = mission.rewardId && !state.earnedRewards.includes(mission.rewardId);
-  const earnedRewards = isNewReward ? [...state.earnedRewards, mission.rewardId] : state.earnedRewards;
-  store.setState({
-    discoveredSolutions,
-    completedMissions,
-    earnedRewards,
-    missionSolved: true,
-    sessionCompleted: state.sessionCompleted + 1,
-  });
   setFeedback(mission.type === "pattern" ? "patternSuccess" : "solutionWorks", "success");
   playTone("success");
-  if (isNewReward) revealReward(mission.rewardId);
-  else focusAfterRender("[data-action='next-mission']");
+  focusAfterRender("#completionTitle");
 }
 
 function renderDiscoveredSolutions(state) {
@@ -438,9 +672,10 @@ function renderDiscoveredSolutions(state) {
 
 function showHint() {
   const state = store.getState();
+  if (state.lifecycle !== LIFECYCLE.ACTIVE) return;
   const hints = state.currentMission?.hintKeys ?? ["tryAgain"];
   const index = Math.min(state.hintStep, hints.length - 1);
-  store.setState({ hintStep: index + 1, hintsUsed: state.hintsUsed + 1 });
+  store.dispatch({ type: PROGRESSION_ACTION.USE_HINT });
   setFeedback(hints[index], "hint");
   playTone("place");
 }
@@ -476,7 +711,7 @@ function useStrategy(strategyId) {
     const usedValues = new Set(state.availableCards.map((card) => card.value));
     const extra = NUMBER_CARDS.find((card) => card.difficulty <= state.difficulty && !usedValues.has(card.value));
     if (extra) {
-      store.setState({ availableCards: [...state.availableCards, { ...extra, instanceId: `${extra.id}-extra` }] });
+      setRunState({ availableCards: [...state.availableCards, { ...extra, instanceId: `${extra.id}-extra` }] });
       applied = true;
     }
   } else if (strategy.action === "swap-one") {
@@ -484,7 +719,7 @@ function useStrategy(strategyId) {
     const remove = available[0];
     const replacement = NUMBER_CARDS.find((card) => card.difficulty <= state.difficulty && !state.availableCards.some((item) => item.value === card.value));
     if (remove && replacement) {
-      store.setState({ availableCards: state.availableCards.map((card) => card.instanceId === remove.instanceId ? { ...replacement, instanceId: `${replacement.id}-swap` } : card) });
+      setRunState({ availableCards: state.availableCards.map((card) => card.instanceId === remove.instanceId ? { ...replacement, instanceId: `${replacement.id}-swap` } : card) });
       applied = true;
     }
   } else if (strategy.action === "echo-card") {
@@ -493,7 +728,7 @@ function useStrategy(strategyId) {
       setFeedback("chooseCardFirst", "hint");
       return;
     }
-    store.setState({ selectedCards: [...state.selectedCards, { ...last, instanceId: `${last.instanceId}-echo` }], history: [...state.history, state.selectedCards] });
+    setRunState({ selectedCards: [...state.selectedCards, { ...last, instanceId: `${last.instanceId}-echo` }], history: [...state.history, state.selectedCards] });
     applied = true;
   } else if (strategy.action === "nudge-target" && Number.isFinite(state.currentMission.target)) {
     const candidates = [state.currentMission.target + 1, state.currentMission.target - 1]
@@ -508,7 +743,7 @@ function useStrategy(strategyId) {
     setFeedback("strategyUnavailable", "hint");
     return;
   }
-  store.setState({ strategyUsed: strategyId });
+  setRunState({ strategyUsed: strategyId });
   setFeedback("strategyUsed", "success");
   focusFirstAvailableCard();
 }
@@ -573,7 +808,11 @@ function renderProfile(state) {
   document.querySelector("#profileNameInput").value = state.profile.name;
   const stats = document.querySelector("#profileStats");
   stats.replaceChildren();
+  const rank = getPlayerRank(state);
   const values = [
+    ["✦", "rank", `${rank.number}. ${t(rank.nameKey)}`],
+    ["XP", "experience", state.progress.experience],
+    ["★", "stars", getTotalStars(state)],
     ["✓", "missionsCompleted", new Set(state.completedMissions).size],
     ["∞", "solutionsFound", Object.values(state.discoveredSolutions).reduce((total, solutions) => total + solutions.length, 0)],
     ["★", "rewardsEarned", new Set(state.earnedRewards).size],
@@ -637,7 +876,11 @@ function handleProgressReset(button) {
   clearStoredState();
   resetArmed = false;
   closeModal(elements.settingsModal);
-  store.setState(createInitialState(language));
+  store.dispatch({
+    type: PROGRESSION_ACTION.RESET_PROGRESS,
+    language,
+    keepProfile: false,
+  });
   announce(t("progressResetDone"));
 }
 

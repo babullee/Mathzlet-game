@@ -33,6 +33,20 @@ body:has(.modal-backdrop:not([hidden])) {
   overflow: hidden;
 }
 
+body:is(
+  [data-screen="game"],
+  [data-screen="mission-complete"],
+  [data-screen="level-complete"],
+  [data-screen="world-complete"],
+  [data-screen="game-complete"]
+) {
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
 button,
 input,
 select,

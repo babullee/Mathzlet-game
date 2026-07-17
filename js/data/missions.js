@@ -1,365 +1,355 @@
-export const LOCATIONS = Object.freeze([
-  Object.freeze({
-    id: "number-forest",
-    labelKey: "numberForest",
-    icon: "tree",
-  }),
-  Object.freeze({
-    id: "pattern-cave",
-    labelKey: "patternCave",
-    icon: "cave",
-  }),
-  Object.freeze({
-    id: "shape-river",
-    labelKey: "shapeRiver",
-    icon: "river",
-  }),
-  Object.freeze({
-    id: "logic-mountain",
-    labelKey: "logicMountain",
-    icon: "mountain",
-  }),
-  Object.freeze({
-    id: "treasure-camp",
-    labelKey: "treasureCamp",
-    icon: "camp",
-  }),
-]);
+import { LEVELS, WORLDS } from "./worlds.js";
 
-const choice = (id, value, representation = "quantity") =>
+export const LOCATIONS = Object.freeze(
+  WORLDS.map((world) =>
+    Object.freeze({
+      id: world.id,
+      labelKey: world.nameKey,
+      descriptionKey: world.descriptionKey,
+      icon: world.icon,
+    }),
+  ),
+);
+
+const freezeArray = (items) => Object.freeze([...items]);
+
+const choice = (missionId, id, value, representation = "quantity") =>
   Object.freeze({
-    id,
+    id: `${missionId}-${id}`,
     type: "puzzle-choice",
     value,
     quantity: value,
     representation,
-    labelKey: `choice${id.replace(/(^|-)(\w)/g, (_, __, letter) => letter.toUpperCase())}`,
+    labelKey: "generatedChoiceLabel",
   });
 
-export const MISSIONS = Object.freeze([
-  Object.freeze({
-    id: "target-10-two",
+const choiceSet = (missionId, values, prefix = "choice") =>
+  freezeArray(values.map((value, index) => choice(missionId, `${prefix}-${index + 1}`, value)));
+
+const sharedMetadata = (level, missionIndex, templateId) => {
+  const world = WORLDS.find((item) => item.id === level.worldId);
+  return {
+    worldId: level.worldId,
+    levelId: level.id,
+    missionIndex,
+    location: level.worldId,
+    difficulty: level.difficulty,
+    templateId,
+    xpReward: 10 + (level.difficulty - 1) * 2,
+    bonusXp: 5,
+    rewardId: level.rewardId,
+    visualSupport: level.difficulty === 1,
+    parentPromptKey: missionIndex % 2 === 0 ? "parentPromptAnotherWay" : "parentPromptWhyChoose",
+    parentPromptParams: Object.freeze({ world: world?.nameKey ?? level.worldId }),
+    cooperative: missionIndex === 4,
+    strategyChallenge: level.difficulty >= 2 && missionIndex === 4,
+    starCriteria: Object.freeze({
+      completion: true,
+      reasoningObjective: missionIndex === 4,
+      limitedHints: level.difficulty >= 2 ? 1 : 2,
+    }),
+  };
+};
+
+function targetTemplate(id, level, missionIndex) {
+  const target = 7 + ((level.globalOrder + missionIndex) % 3);
+  return {
+    id,
+    ...sharedMetadata(level, missionIndex, "target-pair"),
     type: "target-number",
-    difficulty: 1,
-    location: "number-forest",
-    titleKey: "missionTargetTenTitle",
-    instructionKey: "missionTargetTenInstruction",
-    target: 10,
+    titleKey: "generatedTargetMissionTitle",
+    instructionKey: "generatedTargetMissionInstruction",
+    instructionParams: Object.freeze({ target, count: 2 }),
+    target,
     minimumCards: 2,
     maximumCards: 2,
-    allowedOperations: Object.freeze(["add"]),
+    allowedOperations: freezeArray(["add"]),
+    solutionsRequired: 1,
+    allowMultipleSolutions: true,
+    handSize: 6,
+    fallbackHandValues: freezeArray([1, 2, 3, 4, 5, 6]),
+    hintKeys: freezeArray(["hintLevelOne", "hintLevelTwo", "hintLevelThree"]),
+  };
+}
+
+function multipleSolutionsTemplate(id, level, missionIndex) {
+  return {
+    id,
+    ...sharedMetadata(level, missionIndex, "multiple-pairs"),
+    type: "multiple-solutions",
+    titleKey: "generatedMultipleMissionTitle",
+    instructionKey: "generatedMultipleMissionInstruction",
+    instructionParams: Object.freeze({ target: 7 }),
+    target: 7,
+    minimumCards: 2,
+    maximumCards: 2,
+    allowedOperations: freezeArray(["add"]),
     solutionsRequired: 2,
     allowMultipleSolutions: true,
     handSize: 6,
-    fallbackHandValues: Object.freeze([2, 3, 4, 6, 7, 8]),
-    visualSupport: true,
-    rewardId: "number-builder",
-    hintKeys: Object.freeze(["hintTargetTen1", "hintTargetTen2", "hintLevelThree"]),
-  }),
-  Object.freeze({
-    id: "compare-big-group",
+    fallbackHandValues: freezeArray([1, 2, 3, 4, 5, 6]),
+    hintKeys: freezeArray(["hintTargetTwelve1", "hintLevelTwo", "hintLevelThree"]),
+  };
+}
+
+function comparisonTemplate(id, level, missionIndex) {
+  const comparison = (level.globalOrder + missionIndex) % 2 ? "larger" : "smaller";
+  return {
+    id,
+    ...sharedMetadata(level, missionIndex, "compare-groups"),
     type: "comparison",
-    difficulty: 1,
-    location: "shape-river",
-    titleKey: "missionCompareBigGroupTitle",
-    instructionKey: "missionCompareBigGroupInstruction",
-    comparison: "larger",
+    titleKey: "generatedComparisonMissionTitle",
+    instructionKey: comparison === "larger"
+      ? "generatedChooseLargerInstruction"
+      : "generatedChooseSmallerInstruction",
+    comparison,
     minimumCards: 1,
     maximumCards: 1,
-    choices: Object.freeze([choice("group-five", 5), choice("group-eight", 8)]),
+    choices: choiceSet(id, [3, 7], "group"),
     solutionsRequired: 1,
-    rewardId: "careful-observer",
-    hintKeys: Object.freeze(["hintComparison1", "hintLevelTwo", "hintLevelThree"]),
-  }),
-  Object.freeze({
-    id: "classify-under-6",
+    hintKeys: freezeArray(["hintComparison1", "hintLevelTwo", "hintLevelThree"]),
+  };
+}
+
+function patternTemplate(id, level, missionIndex) {
+  const useAab = (level.globalOrder + missionIndex) % 2 === 0;
+  const sequence = useAab ? [1, 1, 2, 1, 1, 2] : [2, 4, 2, 4];
+  const answer = useAab ? 1 : 2;
+  return {
+    id,
+    ...sharedMetadata(level, missionIndex, "repeating-pattern"),
+    type: "pattern",
+    titleKey: "generatedPatternMissionTitle",
+    instructionKey: "generatedPatternMissionInstruction",
+    sequence: freezeArray(sequence),
+    validNextValues: freezeArray([answer]),
+    minimumCards: 1,
+    maximumCards: 1,
+    choices: choiceSet(id, [answer, answer + 1, answer + 3], "pattern"),
+    solutionsRequired: 1,
+    hintKeys: freezeArray(["hintPattern1", "hintPattern2", "hintLevelThree"]),
+  };
+}
+
+function classificationTemplate(id, level, missionIndex) {
+  const greater = (level.globalOrder + missionIndex) % 2 === 0;
+  return {
+    id,
+    ...sharedMetadata(level, missionIndex, "classify-numbers"),
     type: "classification",
-    difficulty: 1,
-    location: "number-forest",
-    titleKey: "missionClassifyUnderSixTitle",
-    instructionKey: "missionClassifyUnderSixInstruction",
-    predicate: Object.freeze({ operator: "less-than", value: 6 }),
+    titleKey: "generatedClassificationMissionTitle",
+    instructionKey: greater
+      ? "generatedChooseAboveInstruction"
+      : "generatedChooseBelowInstruction",
+    instructionParams: Object.freeze({ value: greater ? 5 : 6 }),
+    predicate: Object.freeze({
+      operator: greater ? "greater-than" : "less-than",
+      value: greater ? 5 : 6,
+    }),
     selectionRule: "all-matching",
     minimumCards: 1,
     maximumCards: 4,
     solutionsRequired: 1,
     handSize: 4,
-    fallbackHandValues: Object.freeze([2, 4, 6, 8]),
-    rewardId: "creative-thinker",
-    hintKeys: Object.freeze(["hintClassification1", "hintLevelTwo", "hintLevelThree"]),
-  }),
-  Object.freeze({
-    id: "pattern-ab-next",
-    type: "pattern",
-    difficulty: 1,
-    location: "pattern-cave",
-    titleKey: "missionPatternAbTitle",
-    instructionKey: "missionPatternAbInstruction",
-    sequence: Object.freeze([2, 4, 2, 4]),
-    validNextValues: Object.freeze([2]),
-    minimumCards: 1,
-    maximumCards: 1,
-    choices: Object.freeze([choice("pattern-two", 2), choice("pattern-three", 3), choice("pattern-six", 6)]),
-    solutionsRequired: 1,
-    rewardId: "pattern-explorer",
-    hintKeys: Object.freeze(["hintPattern1", "hintPattern2", "hintLevelThree"]),
-  }),
-  Object.freeze({
-    id: "match-seven",
-    type: "match-equivalent",
-    difficulty: 1,
-    location: "shape-river",
-    titleKey: "missionMatchSevenTitle",
-    instructionKey: "missionMatchSevenInstruction",
-    targetQuantity: 7,
-    minimumCards: 1,
-    maximumCards: 1,
-    choices: Object.freeze([
-      choice("quantity-five", 5),
-      choice("quantity-seven", 7),
-      choice("quantity-nine", 9),
-    ]),
-    solutionsRequired: 1,
-    rewardId: "careful-observer",
-    hintKeys: Object.freeze(["hintLevelOne", "hintLevelTwo", "hintLevelThree"]),
-  }),
-  Object.freeze({
-    id: "target-12-two-ways",
-    type: "multiple-solutions",
-    difficulty: 2,
-    location: "number-forest",
-    titleKey: "missionTargetTwelveTitle",
-    instructionKey: "missionTargetTwelveInstruction",
-    target: 12,
+    fallbackHandValues: freezeArray([2, 4, 6, 8]),
+    hintKeys: freezeArray(["hintClassification1", "hintLevelTwo", "hintLevelThree"]),
+  };
+}
+
+function openEndedTemplate(id, level, missionIndex) {
+  return {
+    id,
+    ...sharedMetadata(level, missionIndex, "open-range"),
+    type: "open-ended",
+    titleKey: "generatedOpenMissionTitle",
+    instructionKey: "generatedOpenMissionInstruction",
+    instructionParams: Object.freeze({ minimum: 6, maximum: 10 }),
+    minimumTotal: 6,
+    maximumTotal: 10,
     minimumCards: 2,
     maximumCards: 2,
-    allowedOperations: Object.freeze(["add"]),
-    solutionsRequired: 2,
+    allowedOperations: freezeArray(["add"]),
+    solutionsRequired: 1,
     allowMultipleSolutions: true,
     handSize: 6,
-    fallbackHandValues: Object.freeze([3, 4, 5, 7, 8, 9]),
-    rewardId: "multiple-solution-finder",
-    hintKeys: Object.freeze(["hintTargetTwelve1", "hintLevelTwo", "hintLevelThree"]),
-  }),
-  Object.freeze({
-    id: "open-8-to-12",
-    type: "open-ended",
-    difficulty: 2,
-    location: "number-forest",
-    titleKey: "missionOpenRangeTitle",
-    instructionKey: "missionOpenRangeInstruction",
-    minimumTotal: 8,
-    maximumTotal: 12,
-    minimumCards: 2,
-    maximumCards: 2,
-    allowedOperations: Object.freeze(["add"]),
-    solutionsRequired: 1,
-    allowMultipleSolutions: true,
-    handSize: 5,
-    fallbackHandValues: Object.freeze([2, 3, 5, 6, 7]),
-    rewardId: "creative-thinker",
-    hintKeys: Object.freeze(["hintOpenRange1", "hintLevelTwo", "hintLevelThree"]),
-  }),
-  Object.freeze({
-    id: "pattern-growing",
-    type: "pattern",
-    difficulty: 2,
-    location: "pattern-cave",
-    titleKey: "missionPatternGrowingTitle",
-    instructionKey: "missionPatternGrowingInstruction",
-    sequence: Object.freeze([1, 3, 5]),
-    validNextValues: Object.freeze([7]),
+    fallbackHandValues: freezeArray([1, 2, 3, 4, 5, 6]),
+    hintKeys: freezeArray(["hintOpenRange1", "hintLevelTwo", "hintLevelThree"]),
+  };
+}
+
+function matchTemplate(id, level, missionIndex) {
+  const targetQuantity = 5 + ((level.globalOrder + missionIndex) % 3);
+  return {
+    id,
+    ...sharedMetadata(level, missionIndex, "match-quantity"),
+    type: "match-equivalent",
+    titleKey: "generatedMatchMissionTitle",
+    instructionKey: "generatedMatchMissionInstruction",
+    instructionParams: Object.freeze({ target: targetQuantity }),
+    targetQuantity,
     minimumCards: 1,
     maximumCards: 1,
-    choices: Object.freeze([choice("growing-six", 6), choice("growing-seven", 7), choice("growing-eight", 8)]),
+    choices: choiceSet(id, [targetQuantity - 1, targetQuantity, targetQuantity + 2], "quantity"),
     solutionsRequired: 1,
-    rewardId: "pattern-explorer",
-    hintKeys: Object.freeze(["hintPattern1", "hintPattern2", "hintLevelThree"]),
-  }),
-  Object.freeze({
-    id: "odd-even-treasure",
+    hintKeys: freezeArray(["hintLevelOne", "hintLevelTwo", "hintLevelThree"]),
+  };
+}
+
+function oddOneOutTemplate(id, level, missionIndex) {
+  const choices = choiceSet(id, [2, 4, 7, 8], "treasure");
+  return {
+    id,
+    ...sharedMetadata(level, missionIndex, "odd-one-out"),
     type: "odd-one-out",
-    difficulty: 2,
-    location: "pattern-cave",
-    titleKey: "missionOddEvenTitle",
-    instructionKey: "missionOddEvenInstruction",
+    titleKey: "generatedOddMissionTitle",
+    instructionKey: "generatedOddMissionInstruction",
     property: "only-odd",
     minimumCards: 1,
     maximumCards: 1,
-    choices: Object.freeze([
-      choice("even-two", 2),
-      choice("even-four", 4),
-      choice("odd-seven", 7),
-      choice("even-eight", 8),
-    ]),
-    oddChoiceId: "odd-seven",
+    choices,
+    oddChoiceId: choices[2].id,
     solutionsRequired: 1,
-    rewardId: "careful-observer",
-    hintKeys: Object.freeze(["hintLevelOne", "hintLevelTwo", "hintLevelThree"]),
-  }),
-  Object.freeze({
-    id: "target-15-flex",
-    type: "target-number",
-    difficulty: 2,
-    location: "number-forest",
-    titleKey: "missionTargetFifteenTitle",
-    instructionKey: "missionTargetFifteenInstruction",
-    target: 15,
-    minimumCards: 2,
-    maximumCards: 3,
-    allowedOperations: Object.freeze(["add"]),
-    solutionsRequired: 1,
-    allowMultipleSolutions: true,
-    handSize: 6,
-    fallbackHandValues: Object.freeze([2, 3, 5, 6, 7, 8]),
-    rewardId: "number-builder",
-    hintKeys: Object.freeze(["hintLevelOne", "hintLevelTwo", "hintLevelThree"]),
-  }),
-  Object.freeze({
-    id: "three-step-14",
+    hintKeys: freezeArray(["hintLevelOne", "hintLevelTwo", "hintLevelThree"]),
+  };
+}
+
+function compoundTemplate(id, level, missionIndex) {
+  return {
+    id,
+    ...sharedMetadata(level, missionIndex, "planned-total"),
     type: "compound-target",
-    difficulty: 3,
-    location: "shape-river",
-    titleKey: "missionThreeStepFourteenTitle",
-    instructionKey: "missionThreeStepFourteenInstruction",
-    target: 14,
+    titleKey: "generatedPlanMissionTitle",
+    instructionKey: "generatedPlanMissionInstruction",
+    instructionParams: Object.freeze({ target: 12, threshold: 5 }),
+    target: 12,
     minimumCards: 3,
     maximumCards: 3,
-    allowedOperations: Object.freeze(["add"]),
+    allowedOperations: freezeArray(["add"]),
     propertyRequirement: Object.freeze({ operator: "some-greater-than", value: 5 }),
-    targetRange: Object.freeze([12, 16]),
-    solutionsRequired: 1,
-    allowMultipleSolutions: true,
-    handSize: 7,
-    fallbackHandValues: Object.freeze([1, 2, 3, 4, 6, 7, 8]),
-    rewardId: "plan-maker",
-    hintKeys: Object.freeze(["hintLevelOne", "hintLevelTwo", "hintLevelThree"]),
-  }),
-  Object.freeze({
-    id: "ordered-gap-two",
-    type: "sequence-build",
-    difficulty: 3,
-    location: "pattern-cave",
-    titleKey: "missionOrderedGapTitle",
-    instructionKey: "missionOrderedGapInstruction",
-    minimumCards: 3,
-    maximumCards: 3,
-    relationship: Object.freeze({ operator: "increase-by", value: 2 }),
-    solutionsRequired: 1,
-    allowMultipleSolutions: true,
-    handSize: 7,
-    fallbackHandValues: Object.freeze([1, 2, 3, 4, 5, 6, 7]),
-    rewardId: "pattern-explorer",
-    hintKeys: Object.freeze(["hintPattern1", "hintPattern2", "hintLevelThree"]),
-  }),
-  Object.freeze({
-    id: "target-9-two-ways",
-    type: "multiple-solutions",
-    difficulty: 1,
-    location: "logic-mountain",
-    titleKey: "missionTargetNineTitle",
-    instructionKey: "missionTargetNineInstruction",
-    target: 9,
-    minimumCards: 2,
-    maximumCards: 2,
-    allowedOperations: Object.freeze(["add"]),
-    solutionsRequired: 2,
-    allowMultipleSolutions: true,
-    handSize: 6,
-    fallbackHandValues: Object.freeze([1, 2, 3, 6, 7, 8]),
-    rewardId: "multiple-solution-finder",
-    hintKeys: Object.freeze(["hintTargetNine1", "hintLevelTwo", "hintLevelThree"]),
-  }),
-  Object.freeze({
-    id: "compare-small-group",
-    type: "comparison",
-    difficulty: 1,
-    location: "logic-mountain",
-    titleKey: "missionCompareSmallTitle",
-    instructionKey: "missionCompareSmallInstruction",
-    comparison: "smaller",
-    minimumCards: 1,
-    maximumCards: 1,
-    choices: Object.freeze([choice("small-three", 3), choice("small-six", 6)]),
-    solutionsRequired: 1,
-    rewardId: "careful-observer",
-    hintKeys: Object.freeze(["hintCompareSmall1", "hintLevelTwo", "hintLevelThree"]),
-  }),
-  Object.freeze({
-    id: "classify-above-5",
-    type: "classification",
-    difficulty: 2,
-    location: "logic-mountain",
-    titleKey: "missionClassifyAboveFiveTitle",
-    instructionKey: "missionClassifyAboveFiveInstruction",
-    predicate: Object.freeze({ operator: "greater-than", value: 5 }),
-    selectionRule: "all-matching",
-    minimumCards: 1,
-    maximumCards: 4,
-    solutionsRequired: 1,
-    handSize: 4,
-    fallbackHandValues: Object.freeze([3, 5, 6, 8]),
-    rewardId: "creative-thinker",
-    hintKeys: Object.freeze(["hintClassifyAbove1", "hintLevelTwo", "hintLevelThree"]),
-  }),
-  Object.freeze({
-    id: "pattern-aab-next",
-    type: "pattern",
-    difficulty: 2,
-    location: "treasure-camp",
-    titleKey: "missionPatternAabTitle",
-    instructionKey: "missionPatternAabInstruction",
-    sequence: Object.freeze([1, 1, 2, 1, 1, 2]),
-    validNextValues: Object.freeze([1]),
-    minimumCards: 1,
-    maximumCards: 1,
-    choices: Object.freeze([choice("aab-one", 1), choice("aab-two", 2), choice("aab-three", 3)]),
-    solutionsRequired: 1,
-    rewardId: "pattern-explorer",
-    hintKeys: Object.freeze(["hintPatternAab1", "hintPattern2", "hintLevelThree"]),
-  }),
-  Object.freeze({
-    id: "open-10-to-15",
-    type: "open-ended",
-    difficulty: 3,
-    location: "treasure-camp",
-    titleKey: "missionOpenTenFifteenTitle",
-    instructionKey: "missionOpenTenFifteenInstruction",
-    minimumTotal: 10,
-    maximumTotal: 15,
-    minimumCards: 3,
-    maximumCards: 3,
-    allowedOperations: Object.freeze(["add"]),
-    solutionsRequired: 1,
-    allowMultipleSolutions: true,
-    handSize: 7,
-    fallbackHandValues: Object.freeze([1, 2, 3, 4, 5, 6, 7]),
-    rewardId: "plan-maker",
-    hintKeys: Object.freeze(["hintOpenTenFifteen1", "hintLevelTwo", "hintLevelThree"]),
-  }),
-  Object.freeze({
-    id: "ordered-gap-one",
-    type: "sequence-build",
-    difficulty: 3,
-    location: "treasure-camp",
-    titleKey: "missionOrderedGapOneTitle",
-    instructionKey: "missionOrderedGapOneInstruction",
-    minimumCards: 3,
-    maximumCards: 3,
-    relationship: Object.freeze({ operator: "increase-by", value: 1 }),
+    targetRange: freezeArray([11, 13]),
     solutionsRequired: 1,
     allowMultipleSolutions: true,
     handSize: 6,
-    fallbackHandValues: Object.freeze([1, 2, 3, 4, 5, 6]),
-    rewardId: "pattern-explorer",
-    hintKeys: Object.freeze(["hintOrderedGapOne1", "hintPattern2", "hintLevelThree"]),
-  }),
-]);
+    fallbackHandValues: freezeArray([1, 2, 3, 4, 6, 7]),
+    hintKeys: freezeArray(["hintLevelOne", "hintLevelTwo", "hintLevelThree"]),
+  };
+}
+
+function sequenceTemplate(id, level, missionIndex) {
+  const gap = (level.globalOrder + missionIndex) % 2 ? 1 : 2;
+  return {
+    id,
+    ...sharedMetadata(level, missionIndex, "ordered-sequence"),
+    type: "sequence-build",
+    titleKey: "generatedSequenceMissionTitle",
+    instructionKey: "generatedSequenceMissionInstruction",
+    instructionParams: Object.freeze({ gap }),
+    minimumCards: 3,
+    maximumCards: 3,
+    relationship: Object.freeze({ operator: "increase-by", value: gap }),
+    solutionsRequired: 1,
+    allowMultipleSolutions: true,
+    handSize: 6,
+    fallbackHandValues: freezeArray([1, 2, 3, 4, 5, 6]),
+    hintKeys: freezeArray(["hintPattern1", "hintPattern2", "hintLevelThree"]),
+  };
+}
+
+const TEMPLATES = Object.freeze({
+  target: targetTemplate,
+  multiple: multipleSolutionsTemplate,
+  comparison: comparisonTemplate,
+  pattern: patternTemplate,
+  classification: classificationTemplate,
+  open: openEndedTemplate,
+  match: matchTemplate,
+  odd: oddOneOutTemplate,
+  compound: compoundTemplate,
+  sequence: sequenceTemplate,
+});
+
+const WORLD_TEMPLATE_ROTATIONS = Object.freeze({
+  "number-forest": freezeArray(["target", "multiple", "classification", "open", "comparison"]),
+  "pattern-cave": freezeArray(["pattern", "sequence", "odd", "classification", "open"]),
+  "shape-river": freezeArray(["comparison", "match", "classification", "pattern", "sequence"]),
+  "logic-mountain": freezeArray(["compound", "sequence", "comparison", "classification", "target"]),
+  "treasure-camp": freezeArray(["multiple", "open", "compound", "pattern", "odd", "sequence", "match", "classification"]),
+});
+
+function specialLegacyMission(id, level, missionIndex) {
+  if (id === "target-10-two") {
+    return {
+      ...multipleSolutionsTemplate(id, level, missionIndex),
+      type: "target-number",
+      templateId: "legacy-target-ten",
+      titleKey: "missionTargetTenTitle",
+      instructionKey: "missionTargetTenInstruction",
+      target: 10,
+      fallbackHandValues: freezeArray([2, 3, 4, 6, 7, 8]),
+      hintKeys: freezeArray(["hintTargetTen1", "hintTargetTen2", "hintLevelThree"]),
+    };
+  }
+  if (id === "target-12-two-ways") {
+    return {
+      ...multipleSolutionsTemplate(id, level, missionIndex),
+      templateId: "legacy-target-twelve",
+      titleKey: "missionTargetTwelveTitle",
+      instructionKey: "missionTargetTwelveInstruction",
+      target: 12,
+      fallbackHandValues: freezeArray([3, 4, 5, 7, 8, 9]),
+      hintKeys: freezeArray(["hintTargetTwelve1", "hintLevelTwo", "hintLevelThree"]),
+    };
+  }
+  return null;
+}
+
+const buildMissions = () => {
+  const missions = [];
+  for (const level of LEVELS) {
+    const rotation = WORLD_TEMPLATE_ROTATIONS[level.worldId];
+    level.missionIds.forEach((id, offset) => {
+      const missionIndex = offset + 1;
+      const legacyMission = specialLegacyMission(id, level, missionIndex);
+      const templateName = rotation[(level.order + offset - 1) % rotation.length];
+      const definition = legacyMission ?? TEMPLATES[templateName](id, level, missionIndex);
+      missions.push(Object.freeze(definition));
+    });
+  }
+  return Object.freeze(missions);
+};
+
+export const MISSIONS = buildMissions();
+
+export const LEGACY_MISSION_ID_MAP = Object.freeze({
+  "target-10-two": "target-10-two",
+  "compare-big-group": "shape-river-level-01-mission-1",
+  "classify-under-6": "number-forest-level-01-mission-2",
+  "pattern-ab-next": "pattern-cave-level-01-mission-1",
+  "match-seven": "shape-river-level-01-mission-2",
+  "target-12-two-ways": "target-12-two-ways",
+  "open-8-to-12": "number-forest-level-01-mission-4",
+  "pattern-growing": "pattern-cave-level-02-mission-1",
+  "odd-even-treasure": "pattern-cave-level-01-mission-3",
+  "target-15-flex": "number-forest-level-02-mission-1",
+  "three-step-14": "logic-mountain-level-01-mission-1",
+  "ordered-gap-two": "pattern-cave-level-01-mission-2",
+  "target-9-two-ways": "logic-mountain-level-02-mission-1",
+  "compare-small-group": "logic-mountain-level-01-mission-3",
+  "classify-above-5": "logic-mountain-level-01-mission-4",
+  "pattern-aab-next": "treasure-camp-level-01-mission-4",
+  "open-10-to-15": "treasure-camp-level-01-mission-2",
+  "ordered-gap-one": "treasure-camp-level-01-mission-3",
+});
 
 export const SAFE_FALLBACK_MISSION_ID = "target-10-two";
 
 export function getMissionById(id) {
-  return MISSIONS.find((mission) => mission.id === id) ?? null;
+  const migratedId = LEGACY_MISSION_ID_MAP[id] ?? id;
+  return MISSIONS.find((mission) => mission.id === migratedId) ?? null;
+}
+
+export function getMissionsForLevel(levelId) {
+  return MISSIONS.filter((mission) => mission.levelId === levelId);
 }
 
 export function getMissionsForLocation(location, difficulty = 1) {

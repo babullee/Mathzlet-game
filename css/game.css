@@ -438,3 +438,282 @@
   color: var(--strategy);
   font-size: var(--text-lg);
 }
+
+/* Active play is a viewport-bound workspace. Other screens keep normal page flow. */
+.game-screen .game-layout {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  grid-template-areas:
+    "mission"
+    "hand"
+    "tools";
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: clamp(.375rem, 1.5vmin, var(--space-3));
+  overflow: hidden;
+}
+
+.game-screen .game-layout > .mission-panel {
+  grid-area: mission;
+  min-height: 0;
+}
+
+.game-screen .game-layout > .hand-panel {
+  grid-area: hand;
+  min-height: 0;
+}
+
+.game-screen .game-layout > .tools-panel {
+  grid-area: tools;
+  min-height: 0;
+}
+
+.game-screen .mission-panel {
+  position: relative;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "category target"
+    "title target"
+    "instruction target"
+    "back target";
+  gap: var(--space-1) var(--space-2);
+  padding: var(--space-2);
+  border-block-start-width: 5px;
+  overflow: hidden;
+}
+
+.game-screen .mission-panel > .card-category {
+  grid-area: category;
+}
+
+.game-screen .mission-panel > h2 {
+  grid-area: title;
+  overflow: hidden;
+  font-size: clamp(1rem, 4vw, 1.3rem);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-screen .mission-panel > p {
+  grid-area: instruction;
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: clamp(.82rem, 3vw, 1rem);
+  line-height: 1.2;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.game-screen .mission-panel > .target-display {
+  grid-area: target;
+  align-self: center;
+  width: clamp(3.75rem, 14dvh, 4.75rem);
+  min-height: 3.75rem;
+  padding: var(--space-1);
+  border-width: 3px;
+  font-size: clamp(1.65rem, 8dvh, 2.5rem);
+}
+
+.game-screen .mission-panel > .map-return {
+  grid-area: back;
+  justify-self: start;
+  min-height: var(--target-min);
+  padding: var(--space-1) var(--space-3);
+  font-size: .82rem;
+}
+
+.game-screen .hand-panel {
+  grid-template-rows:
+    auto
+    minmax(3.75rem, 1fr)
+    auto
+    auto
+    auto
+    minmax(6rem, auto)
+    auto;
+  gap: clamp(.25rem, 1vmin, var(--space-2));
+  padding: var(--space-2);
+  overflow: hidden;
+}
+
+.game-screen .hand-panel > h2 {
+  font-size: clamp(1rem, 3.5vw, 1.25rem);
+}
+
+.game-screen .solution-zone {
+  min-height: 0;
+  height: 100%;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  overflow: hidden;
+}
+
+.game-screen .solution-zone .selected-cards {
+  flex-wrap: nowrap;
+  gap: var(--space-2);
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: .45rem;
+  overscroll-behavior-inline: contain;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.game-screen .solution-zone .game-card,
+.game-screen .solution-zone .game-card.is-compact {
+  flex: 0 0 clamp(3.75rem, 16vw, 5rem);
+  width: clamp(3.75rem, 16vw, 5rem);
+  height: clamp(4.75rem, 14dvh, 5.5rem);
+  min-height: var(--target-min);
+}
+
+.game-screen .solution-zone .card-category {
+  font-size: .58rem;
+}
+
+.game-screen .solution-zone .card-number {
+  font-size: clamp(1.65rem, 7vw, 2.5rem);
+}
+
+.game-screen .microcopy {
+  overflow: hidden;
+  font-size: clamp(.72rem, 2.6vw, .875rem);
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-screen .discovered-solutions {
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.game-screen .discovered-solutions:empty,
+.game-screen .strategy-shelf:empty {
+  display: none;
+}
+
+.game-screen .hand-panel .card-grid {
+  grid-auto-flow: column;
+  grid-auto-columns: clamp(5rem, 25vw, 7rem);
+  grid-template-columns: none;
+  justify-content: start;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: .4rem .25rem .7rem;
+  scroll-padding-inline: .25rem;
+  scroll-snap-type: x proximity;
+  overscroll-behavior-inline: contain;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.game-screen .hand-panel .game-card {
+  height: clamp(6rem, 18dvh, 8rem);
+  min-height: var(--target-min);
+  padding: var(--space-2);
+}
+
+.game-screen .hand-panel .card-number {
+  font-size: clamp(2rem, 8dvh, 3rem);
+}
+
+.game-screen .confirm-button {
+  min-height: var(--target-min);
+  padding-block: var(--space-2);
+}
+
+.game-screen .tools-panel {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-1);
+  overflow: hidden;
+}
+
+.game-screen .tools-panel > h2 {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.game-screen .tools-panel > .action-row {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-1);
+}
+
+.game-screen .tool-button {
+  min-height: var(--target-min);
+  height: var(--target-min);
+  padding: var(--space-1);
+  font-size: clamp(.67rem, 2.5vw, .8rem);
+}
+
+.game-screen .strategy-shelf {
+  display: block;
+  min-height: 0;
+  max-height: 3.25rem;
+  padding: var(--space-1);
+  border-block-start-width: 3px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+}
+
+.game-screen .strategy-shelf > * {
+  display: inline-block;
+  width: min(12rem, 72vw);
+  margin-inline-end: var(--space-1);
+  vertical-align: top;
+}
+
+.game-screen .feedback {
+  min-height: var(--target-min);
+  max-height: 3.25rem;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-1) var(--space-2);
+  overflow: hidden;
+}
+
+.game-screen .feedback-icon {
+  width: 2rem;
+  height: 2rem;
+}
+
+.game-screen .feedback p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  font-size: .82rem;
+  line-height: 1.15;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.game-screen .success-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-1);
+}
+
+.game-screen .success-actions > button {
+  min-height: var(--target-min);
+  padding: var(--space-2);
+  font-size: .82rem;
+}
+
+.game-screen .tools-panel:has(.success-actions:not([hidden])) > .action-row,
+.game-screen .tools-panel:has(.success-actions:not([hidden])) > .strategy-shelf {
+  display: none;
+}

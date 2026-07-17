@@ -1,10 +1,30 @@
-const screens = ["home", "map", "game", "collection", "parent", "profile"];
+const screens = [
+  "home",
+  "map",
+  "level-select",
+  "game",
+  "mission-complete",
+  "level-complete",
+  "world-complete",
+  "game-complete",
+  "collection",
+  "parent",
+  "profile",
+];
+const completionScreens = new Set([
+  "mission-complete",
+  "level-complete",
+  "world-complete",
+  "game-complete",
+]);
 
 export function showScreen(name) {
   const next = screens.includes(name) ? name : "home";
   const changed = document.body.dataset.screen !== next;
   document.querySelectorAll(".screen[data-screen]").forEach((screen) => {
-    const active = screen.dataset.screen === next;
+    const active =
+      screen.dataset.screen === next ||
+      (screen.dataset.screen === "mission-complete" && completionScreens.has(next));
     screen.hidden = !active;
     screen.classList.toggle("is-active", active);
   });
@@ -16,9 +36,13 @@ export function showScreen(name) {
   });
   document.body.dataset.screen = next;
   if (changed) {
-    window.scrollTo({ top: 0, behavior: "instant" });
+    if (!completionScreens.has(next) && next !== "game") {
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
     requestAnimationFrame(() => {
-      const heading = document.querySelector(`#screen-${next} h1`);
+      const heading = document.querySelector(
+        completionScreens.has(next) ? "#screen-mission-complete h1" : `#screen-${next} h1`,
+      );
       if (!heading) return;
       heading.setAttribute("tabindex", "-1");
       heading.focus({ preventScroll: true });
